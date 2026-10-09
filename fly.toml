@@ -1,4 +1,4 @@
-# Fly.io (pago, mas barato: ~US$ 2–5/mês). Uso: veja docs/deploy.md
+# Fly.io (pago, mas barato: ~US$ 3–5/mês). Uso: veja docs/deploy.md
 # Troque "orcamentos-techmaster" por um nome único seu antes do primeiro `fly launch`/`fly deploy`.
 app = "orcamentos-techmaster"
 primary_region = "gru"   # São Paulo
@@ -20,7 +20,10 @@ primary_region = "gru"   # São Paulo
   auto_start_machines = true
   min_machines_running = 1
 
+# Máquina mais barata que aguenta o sistema. Se aparecer erro de memória (ao enviar fotos grandes), troque para "1gb".
+swap_size_mb = 512
+
 [[vm]]
-  memory = "1gb"
+  memory = "512mb"
   cpu_kind = "shared"
   cpus = 1
