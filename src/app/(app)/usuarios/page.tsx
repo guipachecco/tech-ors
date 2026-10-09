@@ -4,7 +4,7 @@ import { formatDate } from "@/domain/format";
 import { requireCan } from "@/server/auth/current";
 import { getDb } from "@/server/db/client";
 import { listUsers } from "@/server/users";
-import { createUserAction, resetPasswordAction, toggleAccessAction } from "./actions";
+import { createUserAction, resetMfaAction, resetPasswordAction, toggleAccessAction } from "./actions";
 
 export default async function UsuariosPage() {
   const admin = await requireCan("user:manage");
@@ -34,7 +34,10 @@ export default async function UsuariosPage() {
                   <td className={`${tdCls} capitalize`}>{u.perfil}{u.podeVerCusto && u.perfil === "vendedor" ? " (vê custo)" : ""}</td>
                   <td className={tdCls}>
                     <div className="flex flex-col items-start gap-2">
-                      <Badge kind={u.ativo ? "valido" : "vencido"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Badge kind={u.ativo ? "valido" : "vencido"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
+                        <Badge kind={u.totpAtivo ? "valido" : "expirado"}>{u.totpAtivo ? "2FA ativo" : "2FA pendente"}</Badge>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         <InlineAction action={toggleAccessAction} label={u.ativo ? "Desativar" : "Ativar"} className={btnSecondary}>
                           <input type="hidden" name="id" value={u.id} /><input type="hidden" name="campo" value="ativo" /><input type="hidden" name="valor" value={u.ativo ? "0" : "1"} />
@@ -45,6 +48,11 @@ export default async function UsuariosPage() {
                           </InlineAction>
                         )}
                       </div>
+                      {u.totpAtivo && (
+                        <InlineAction action={resetMfaAction} label="Redefinir 2FA" className={btnSecondary} confirm="Redefinir o 2FA deste usuário? Ele sairá de todas as sessões e configurará um novo autenticador no próximo login.">
+                          <input type="hidden" name="id" value={u.id} />
+                        </InlineAction>
+                      )}
                       <InlineAction action={resetPasswordAction} label="Redefinir senha" className={btnSecondary}>
                         <input type="hidden" name="id" value={u.id} />
                         <input name="senha" type="password" placeholder="Nova senha" autoComplete="new-password" className={inputCls} required />

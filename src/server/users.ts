@@ -8,11 +8,11 @@ import type { Db } from "./db/client";
 import { sessoes, usuarios } from "./db/schema";
 import { NotFoundError, parseInput, ValidationError } from "./validation";
 
-export type UserRow = Omit<typeof usuarios.$inferSelect, "senhaHash">;
+export type UserRow = Omit<typeof usuarios.$inferSelect, "senhaHash" | "totpSegredoCifrado" | "totpUltimoPasso">;
 
 const publicCols = {
   id: usuarios.id, nome: usuarios.nome, email: usuarios.email, perfil: usuarios.perfil,
-  podeVerCusto: usuarios.podeVerCusto, ativo: usuarios.ativo, criadoEm: usuarios.criadoEm,
+  podeVerCusto: usuarios.podeVerCusto, ativo: usuarios.ativo, totpAtivo: usuarios.totpAtivo, criadoEm: usuarios.criadoEm,
 };
 
 export function listUsers(db: Db, actor: SessionUser): UserRow[] {

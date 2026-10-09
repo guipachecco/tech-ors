@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getDb } from "../db/client";
 import { can, type Action } from "./permissions";
-import { validateSession, type SessionUser } from "./sessions";
+import { loadConfig } from "../config";
+import { createSession, validateSession, type SessionUser } from "./sessions";
 
 export const SESSION_COOKIE = "sid";
 
@@ -22,4 +23,24 @@ export async function requireCan(action: Action): Promise<SessionUser> {
   const user = await requireUser();
   if (!can(user, action)) redirect("/acesso-negado");
   return user;
+}
+
+export const MFA_COOKIE = "mfa";
+/** Cookie curto (HttpOnly, criptografado) que leva os códigos de recuperação até a página que os exibe. */
+export const RECOVERY_COOKIE = "rc";
+
+/** Cria a sessão e o cookie. Só deve ser chamada depois da senha E do segundo fator. */
+export async function startSession(userId: number): Promise<void> {
+  const { token, expiresAt } = await createSession(getDb(), userId);
+  (await cookies()).set(SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: cookieSecure(),
+    path: "/",
+    expires: expiresAt,
+  });
+}
+
+export function cookieSecure(): boolean {
+  return loadConfig().isProduction && process.env.INSECURE_COOKIES !== "1";
 }

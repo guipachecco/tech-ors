@@ -8,6 +8,13 @@
       "when": 1791557024207,
       "tag": "0000_stiff_ultimates",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791560589002,
+      "tag": "0001_smooth_madame_masque",
+      "breakpoints": true
     }
   ]
 }

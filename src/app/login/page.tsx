@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthBackground } from "@/components/AuthBackground";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = { title: "Entrar" };
@@ -27,12 +28,7 @@ const FEATURES = [
 export default function LoginPage() {
   return (
     <main className="relative isolate min-h-screen overflow-hidden text-[#f4f3fc]" style={{ colorScheme: "dark" }}>
-      <div className="login-bg" aria-hidden>
-        <span className="login-orb purple" />
-        <span className="login-orb cyan" />
-        <span className="login-orb green" />
-        <div className="login-grid" />
-      </div>
+      <AuthBackground />
 
       <div className="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-14 px-6 py-8 lg:grid-cols-[1.12fr_0.88fr] lg:px-10">
         {/* Painel da marca */}

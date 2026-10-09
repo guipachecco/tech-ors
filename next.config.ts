@@ -15,6 +15,8 @@ const securityHeaders = [
 ];
 
 const config: NextConfig = {
+  // Só afeta o modo de desenvolvimento: permite abrir o servidor de teste por 127.0.0.1 além de localhost.
+  allowedDevOrigins: ["127.0.0.1"],
   serverExternalPackages: ["better-sqlite3", "@node-rs/argon2", "@react-pdf/renderer", "exceljs"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

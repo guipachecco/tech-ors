@@ -18,12 +18,12 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  const isPublic = pathname === "/login";
+  const isPublic = pathname === "/login" || pathname.startsWith("/login/");
   const hasSession = request.cookies.has("sid");
   if (!isPublic && !hasSession) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  if (isPublic && hasSession && request.method === "GET") {
+  if (pathname === "/login" && hasSession && request.method === "GET") {
     return NextResponse.redirect(new URL("/orcamentos", request.url));
   }
   return NextResponse.next();

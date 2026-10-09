@@ -6,11 +6,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { guard, type ActionState } from "@/server/actions";
 import { recordAudit } from "@/server/audit";
-import { SESSION_COOKIE } from "@/server/auth/current";
+import { cookieSecure, MFA_COOKIE, SESSION_COOKIE } from "@/server/auth/current";
+import { createChallenge, CHALLENGE_MINUTES } from "@/server/auth/mfa";
 import { verifyPassword } from "@/server/auth/password";
-import { createSession, revokeSession } from "@/server/auth/sessions";
+import { revokeSession } from "@/server/auth/sessions";
 import { checkLoginAllowed, clearLoginFailures, recordLoginFailure } from "@/server/auth/throttle";
-import { loadConfig } from "@/server/config";
 import { getDb } from "@/server/db/client";
 import { usuarios } from "@/server/db/schema";
 import { ValidationError } from "@/server/validation";
@@ -20,8 +20,9 @@ const GENERIC = "E-mail ou senha inválidos.";
 // Hash falso para igualar o tempo de resposta quando o usuário não existe.
 const DUMMY_HASH = "$argon2id$v=19$m=19456,t=2,p=1$c29tZXNhbHRzb21lc2FsdA$Qd0rGZ7mN1vYb8rC5v4FJm0n3m1lq0g2dO2q9E0yK0A";
 
+/** Passo 1: confere e-mail e senha. Não cria sessão — só abre a etapa do código 2FA. */
 export async function loginAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  let success = false;
+  let next = false;
   const result = await guard(async () => {
     const parsed = loginSchema.safeParse({ email: formData.get("email"), senha: formData.get("senha") });
     if (!parsed.success) throw new ValidationError({ _: GENERIC });
@@ -47,18 +48,19 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
     }
 
     keys.forEach((k) => clearLoginFailures(k));
-    const { token, expiresAt } = await createSession(db, user.id);
-    (await cookies()).set(SESSION_COOKIE, token, {
+    const { token, expiresAt } = createChallenge(db, user.id);
+    (await cookies()).set(MFA_COOKIE, token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: loadConfig().isProduction && process.env.INSECURE_COOKIES !== "1",
-      path: "/",
+      sameSite: "strict",
+      secure: cookieSecure(),
+      path: "/login",
+      maxAge: CHALLENGE_MINUTES * 60,
       expires: expiresAt,
     });
-    recordAudit(db, { userId: user.id, acao: "login.ok", entidade: "usuario", entidadeId: user.id });
-    success = true;
+    recordAudit(db, { userId: user.id, acao: "login.senha_ok", entidade: "usuario", entidadeId: user.id });
+    next = true;
   });
-  if (success) redirect("/orcamentos");
+  if (next) redirect("/login/2fa");
   return result;
 }
 

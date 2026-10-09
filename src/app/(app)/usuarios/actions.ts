@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { guard, intField, str, type ActionState } from "@/server/actions";
 import { requireCan } from "@/server/auth/current";
 import { getDb } from "@/server/db/client";
+import { resetUserMfa } from "@/server/auth/mfa";
 import { createUser, resetPassword, updateUserAccess } from "@/server/users";
 
 export async function createUserAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
@@ -37,5 +38,14 @@ export async function resetPasswordAction(_prev: ActionState, fd: FormData): Pro
   return guard(async () => {
     await resetPassword(getDb(), admin, intField(fd, "id"), String(fd.get("senha") ?? ""));
     return "Senha redefinida. O usuário precisa entrar novamente.";
+  });
+}
+
+export async function resetMfaAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const admin = await requireCan("user:manage");
+  return guard(() => {
+    resetUserMfa(getDb(), admin, intField(fd, "id"));
+    revalidatePath("/usuarios");
+    return "2FA redefinido. O usuário configura um novo autenticador no próximo login.";
   });
 }
