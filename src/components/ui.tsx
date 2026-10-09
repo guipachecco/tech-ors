@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 export const inputCls =
   "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:bg-slate-100";
 export const btnPrimary =
-  "inline-flex items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-800 disabled:opacity-50";
+  "inline-flex items-center justify-center rounded-md bg-[var(--btn)] px-4 py-2 text-sm font-medium text-[#fff] shadow-sm hover:bg-[var(--btn-hover)] disabled:opacity-50";
 export const btnSecondary =
   "inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50";
 export const btnDanger =

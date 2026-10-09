@@ -32,3 +32,9 @@ npm run dev:demo     # http://localhost:3100
 ```bash
 npm test
 ```
+
+## Identidade visual
+
+- Logo e cores vêm do manual de marca (`assets/brand/TechMaster.pdf`): roxo `#6D609E` (Pantone 265 C), verde `#84C225` (382 C), ciano `#3BB3C2` (319 C).
+- Logos vetoriais em `public/brand/` (usados na tela de login e no cabeçalho) e `assets/logo.png` (usado no PDF dos orçamentos).
+- Tema escuro por padrão, com alternância claro/escuro no cabeçalho (preferência salva em cookie). A tela de login é sempre escura.

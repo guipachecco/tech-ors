@@ -24,7 +24,7 @@ export default async function OrcamentosPage({ searchParams }: { searchParams: P
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map(([value, label]) => (
           <Link key={value} href={value ? `/orcamentos?status=${value}` : "/orcamentos"}
-            className={`rounded-full border px-3 py-1 text-sm ${status === value ? "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>
+            className={`rounded-full border px-3 py-1 text-sm ${status === value ? "border-[var(--btn)] bg-[var(--btn)] text-[#fff]" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>
             {label}
           </Link>
         ))}

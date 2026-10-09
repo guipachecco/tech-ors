@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { logoutAction } from "@/app/login/actions";
-import { btnSecondary } from "@/components/ui";
+import { AppNav } from "@/components/AppNav";
+import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { requireUser } from "@/server/auth/current";
 import { can } from "@/server/auth/permissions";
 
@@ -18,23 +20,42 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ];
   return (
     <div className="min-h-screen">
-      <header className="no-print border-b border-slate-200 bg-brand-700 text-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <nav className="flex flex-wrap items-center gap-1">
-            <span className="mr-4 text-lg font-semibold">Orçamentos</span>
-            {links.map((l) => (
-              <Link key={l.href} href={l.href} className="rounded px-3 py-1.5 text-sm hover:bg-white/10">
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-          <form action={logoutAction} className="flex items-center gap-3 text-sm">
-            <span className="text-brand-100">{user.nome}</span>
-            <button type="submit" className={`${btnSecondary} !py-1`}>Sair</button>
-          </form>
+      <header
+        className="no-print sticky top-0 z-20 border-b backdrop-blur"
+        style={{ background: "var(--header-bg)", borderColor: "var(--header-border)" }}
+      >
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2.5">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <Link href="/orcamentos" className="flex items-center gap-2.5" aria-label="TechMaster · Orçamentos">
+              <Logo mark className="h-9 w-9" alt="" />
+              <span className="leading-none">
+                <span className="block text-[15px] font-semibold tracking-wide text-slate-900">
+                  TECH<span className="font-light">MASTER</span>
+                </span>
+                <span className="mt-1 block text-[10px] font-medium uppercase tracking-[0.28em] text-slate-500">Orçamentos</span>
+              </span>
+            </Link>
+            <AppNav links={links} />
+          </div>
+          <div className="flex items-center gap-3 text-sm">
+            <div className="hidden text-right leading-tight sm:block">
+              <div className="font-medium text-slate-800">{user.nome}</div>
+              <div className="text-xs capitalize text-slate-500">{user.perfil}</div>
+            </div>
+            <ThemeToggle />
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Sair
+              </button>
+            </form>
+          </div>
         </div>
+        <div className="h-[2px] w-full" style={{ background: "linear-gradient(90deg,#6d609e,#3bb3c2 55%,#84c225)" }} aria-hidden />
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
     </div>
   );
 }

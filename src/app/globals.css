@@ -1,27 +1,229 @@
 @import "tailwindcss";
 
+/* ---------- Marca Tech Master (manual: Pantone 265 C / 382 C / 319 C) ---------- */
 @theme {
-  --color-brand-50: #eef4fb;
-  --color-brand-100: #d9e6f5;
-  --color-brand-600: #25508a;
-  --color-brand-700: #1f3a5f;
-  --color-brand-800: #182d4a;
+  --color-brand-50: #f1effa;
+  --color-brand-100: #e2def3;
+  --color-brand-600: #5d5190;
+  --color-brand-700: #6d609e;
+  --color-brand-800: #4b4075;
+  --color-tm-purple: #6d609e;
+  --color-tm-green: #84c225;
+  --color-tm-cyan: #3bb3c2;
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---------- Tokens do tema claro (padrão do Tailwind + marca) ---------- */
+:root {
+  --page-bg: #f4f5f9;
+  --text: #0f172a;
+  --btn: #6d609e;
+  --btn-hover: #5d5190;
+  --header-bg: rgba(255, 255, 255, 0.88);
+  --header-border: #e2e8f0;
+  --nav-hover: rgba(109, 96, 158, 0.1);
+  --nav-active-bg: rgba(109, 96, 158, 0.14);
+  --nav-active-text: #4b4075;
+}
+
+/* ---------- Tema escuro: redefine a paleta que as telas já usam ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page-bg: #0e0d1b;
+  --text: #f4f3fc;
+  --btn: #6d609e;
+  --btn-hover: #7d70b3;
+  --header-bg: rgba(14, 13, 27, 0.82);
+  --header-border: #26234a;
+  --nav-hover: rgba(255, 255, 255, 0.07);
+  --nav-active-bg: rgba(154, 143, 214, 0.18);
+  --nav-active-text: #e0dbfa;
+
+  --color-white: #181630;
+  --color-slate-50: #1e1c3a;
+  --color-slate-100: #25224a;
+  --color-slate-200: #2e2b57;
+  --color-slate-300: #3d3a6e;
+  --color-slate-400: #7d79ad;
+  --color-slate-500: #9f9bc8;
+  --color-slate-600: #b9b6dc;
+  --color-slate-700: #d3d1ec;
+  --color-slate-800: #e6e4f6;
+  --color-slate-900: #f4f3fc;
+
+  --color-brand-50: #221e44;
+  --color-brand-100: #2f2a5c;
+  --color-brand-600: #9488d0;
+  --color-brand-700: #9a8fd6;
+  --color-brand-800: #d9d3f7;
+
+  --color-red-50: #2a1219;
+  --color-red-100: #3a1620;
+  --color-red-200: #5c2430;
+  --color-red-700: #ff8d9e;
+  --color-red-800: #ffa3b1;
+  --color-green-50: #12261a;
+  --color-green-100: #16301f;
+  --color-green-200: #24543a;
+  --color-green-800: #8be3a6;
+  --color-amber-50: #2a2210;
+  --color-amber-100: #3a2d10;
+  --color-amber-200: #5a4719;
+  --color-amber-900: #ffd98a;
 }
 
 html {
-  color-scheme: light;
+  background: var(--page-bg);
 }
 
 body {
-  background: #f4f6f9;
-  color: #111827;
-  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: var(--font-sans);
 }
 
-input,
-select,
-textarea {
-  font: inherit;
+/* ---------- Logo por tema ---------- */
+.logo-on-dark,
+.logo-on-light {
+  display: none;
+}
+:root:not([data-theme="dark"]) .logo-on-light {
+  display: block;
+}
+:root[data-theme="dark"] .logo-on-dark {
+  display: block;
+}
+
+/* ---------- Alternador de tema ---------- */
+:root[data-theme="dark"] .icon-when-light {
+  display: none;
+}
+:root:not([data-theme="dark"]) .icon-when-dark {
+  display: none;
+}
+
+/* ---------- Tela de login ---------- */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background:
+    radial-gradient(1100px 600px at 12% -10%, rgba(109, 96, 158, 0.38), transparent 60%),
+    radial-gradient(900px 560px at 100% 105%, rgba(59, 179, 194, 0.22), transparent 60%),
+    radial-gradient(700px 420px at 0% 100%, rgba(132, 194, 37, 0.1), transparent 60%),
+    linear-gradient(180deg, #0c0b18 0%, #100e22 100%);
+}
+
+.login-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 30%, transparent 78%);
+}
+
+.login-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.5;
+  animation: login-float 18s ease-in-out infinite;
+}
+.login-orb.purple {
+  width: 420px;
+  height: 420px;
+  left: -120px;
+  top: 8%;
+  background: #6d609e;
+}
+.login-orb.cyan {
+  width: 340px;
+  height: 340px;
+  right: -90px;
+  bottom: 6%;
+  background: #3bb3c2;
+  opacity: 0.32;
+  animation-delay: -6s;
+}
+.login-orb.green {
+  width: 220px;
+  height: 220px;
+  left: 38%;
+  bottom: -90px;
+  background: #84c225;
+  opacity: 0.16;
+  animation-delay: -11s;
+}
+
+@keyframes login-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(24px, -28px, 0) scale(1.06);
+  }
+}
+
+@keyframes login-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-rise {
+  animation: login-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.login-rise.d1 {
+  animation-delay: 0.08s;
+}
+.login-rise.d2 {
+  animation-delay: 0.18s;
+}
+.login-rise.d3 {
+  animation-delay: 0.28s;
+}
+
+.login-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 179, 194, 0.7), rgba(109, 96, 158, 0.9), transparent);
+}
+
+.login-btn {
+  position: relative;
+  overflow: hidden;
+}
+.login-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+}
+.login-btn:hover:not(:disabled)::after {
+  transform: translateX(120%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-orb,
+  .login-rise {
+    animation: none;
+  }
+  .login-btn::after {
+    transition: none;
+  }
 }
 
 @media print {

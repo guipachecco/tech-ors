@@ -6,14 +6,14 @@ import { formatDate } from "../../domain/format";
 import { formatBRL, formatBps } from "../../domain/money";
 import type { QuoteClientView } from "../quotes/views";
 
-const BRAND = "#1f3a5f";
+const BRAND = "#6d609e"; // Pantone 265 C (manual de marca TechMaster)
 const MUTED = "#6b7280";
 
 const s = StyleSheet.create({
   page: { padding: 36, paddingBottom: 56, fontSize: 9.5, fontFamily: "Helvetica", color: "#111827" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 },
-  logo: { width: 130, height: 50, objectFit: "contain" },
-  company: { fontSize: 14, fontFamily: "Helvetica-Bold", color: BRAND },
+  logo: { width: 92, height: 82, objectFit: "contain", marginBottom: 4 },
+  company: { fontSize: 12, fontFamily: "Helvetica-Bold", color: "#374151" },
   small: { fontSize: 8.5, color: MUTED, marginTop: 2 },
   titleBox: { alignItems: "flex-end" },
   title: { fontSize: 16, fontFamily: "Helvetica-Bold", color: BRAND },
@@ -47,7 +47,15 @@ export function findLogo(dir = path.join(process.cwd(), "assets")): string | und
   return undefined;
 }
 
-function QuotePdf({ view, logoPath }: { view: QuoteClientView; logoPath?: string }) {
+type LogoSrc = { data: Buffer; format: "png" | "jpg" };
+
+// Passa a imagem como dados: caminhos do Windows (C:...) são confundidos com URL pelo react-pdf.
+function readLogo(logoPath?: string): LogoSrc | undefined {
+  if (!logoPath) return undefined;
+  return { data: fs.readFileSync(logoPath), format: /\.png$/i.test(logoPath) ? "png" : "jpg" };
+}
+
+function QuotePdf({ view, logo }: { view: QuoteClientView; logo?: LogoSrc }) {
   const e = view.empresa;
   const c = view.cliente;
   const hasDiscount = view.itens.some((i) => i.descontoBps > 0);
@@ -56,8 +64,8 @@ function QuotePdf({ view, logoPath }: { view: QuoteClientView; logoPath?: string
       <Page size="A4" style={s.page}>
         <View style={s.header}>
           <View>
-            {logoPath ? <Image src={logoPath} style={s.logo} /> : <Text style={s.company}>{e.nome}</Text>}
-            {logoPath && <Text style={s.company}>{e.nome}</Text>}
+            {logo ? <Image src={logo} style={s.logo} /> : <Text style={s.company}>{e.nome}</Text>}
+            {logo && <Text style={s.company}>{e.nome}</Text>}
             {e.cnpj ? <Text style={s.small}>CNPJ {e.cnpj}</Text> : null}
             {e.endereco ? <Text style={s.small}>{e.endereco}</Text> : null}
             <Text style={s.small}>{[e.telefone, e.email].filter(Boolean).join("  ·  ")}</Text>
@@ -145,5 +153,5 @@ function QuotePdf({ view, logoPath }: { view: QuoteClientView; logoPath?: string
 }
 
 export async function buildQuotePdf(view: QuoteClientView, opts: { logoPath?: string } = {}): Promise<Buffer> {
-  return renderToBuffer(<QuotePdf view={view} logoPath={opts.logoPath} />);
+  return renderToBuffer(<QuotePdf view={view} logo={readLogo(opts.logoPath)} />);
 }
