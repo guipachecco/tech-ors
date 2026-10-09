@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
-import { AuthBackground } from "@/components/AuthBackground";
-import { MFA_COOKIE } from "@/server/auth/current";
-import { getChallenge, prepareEnrollment } from "@/server/auth/mfa";
-import { totpKey } from "@/server/auth/totpKey";
-import { getDb } from "@/server/db/client";
+import { AuthBackground } from "@/ui/AuthBackground";
+import { MFA_COOKIE } from "@/app/_shared/session";
+import { getChallenge, prepareEnrollment } from "@/modules/auth/mfa";
+import { totpKey } from "@/modules/auth/totpKey";
+import { getDb } from "@/infra/db/client";
 import { CodeForm } from "./CodeForm";
 import { EnrollForm } from "./EnrollForm";
 

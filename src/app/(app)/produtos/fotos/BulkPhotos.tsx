@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Alert, Badge, btnPrimary, btnSecondary, tdCls, thCls } from "@/components/ui";
-import type { PhotoMatch } from "@/server/catalog/photoMatch";
+import { Alert, Badge, btnPrimary, btnSecondary, tdCls, thCls } from "@/ui/primitives";
+import type { PhotoMatch } from "@/modules/catalog/photos/match";
 import { previewPhotoNamesAction, uploadPhotoByNameAction } from "./actions";
 
 const MAX_BYTES = 8 * 1024 * 1024;

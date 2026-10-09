@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { guard } from "@/server/actions";
-import { requireUser } from "@/server/auth/current";
-import { applyPhotoByName, matchPhotoNames, type PhotoBatchResult, type PhotoMatch } from "@/server/catalog/photoMatch";
-import { MAX_PHOTO_BYTES, PhotoError } from "@/server/catalog/photos";
-import { getDb } from "@/server/db/client";
+import { guard } from "@/app/_shared/actions";
+import { requireUser } from "@/app/_shared/session";
+import { applyPhotoByName, matchPhotoNames, type PhotoBatchResult, type PhotoMatch } from "@/modules/catalog/photos/match";
+import { MAX_PHOTO_BYTES, PhotoError } from "@/modules/catalog/photos/service";
+import { getDb } from "@/infra/db/client";
 
 const MAX_NAMES = 3000;
 

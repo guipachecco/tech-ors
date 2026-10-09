@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { ActionForm } from "@/components/ActionForm";
-import { Alert, Card, Field, inputCls, PageHeader } from "@/components/ui";
-import { requireCan } from "@/server/auth/current";
-import { MAX_FILE_BYTES, MAX_ROWS } from "@/server/catalog/import";
-import { listSuppliers } from "@/server/catalog/suppliers";
-import { getDb } from "@/server/db/client";
+import { ActionForm } from "@/ui/ActionForm";
+import { Alert, Card, Field, inputCls, PageHeader } from "@/ui/primitives";
+import { requireCan } from "@/app/_shared/session";
+import { MAX_FILE_BYTES, MAX_ROWS } from "@/modules/catalog/import/service";
+import { listSuppliers } from "@/modules/catalog/suppliers/service";
+import { getDb } from "@/infra/db/client";
 import { uploadImportAction } from "./actions";
 
 export default async function ImportarPage() {

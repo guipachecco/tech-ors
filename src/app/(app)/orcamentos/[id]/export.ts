@@ -1,9 +1,9 @@
-import { recordAudit } from "@/server/audit";
-import { getCurrentUser } from "@/server/auth/current";
-import { getDb } from "@/server/db/client";
-import { NotFoundError } from "@/server/validation";
-import { getQuote } from "@/server/quotes/service";
-import { loadClientView, type QuoteClientView } from "@/server/quotes/views";
+import { recordAudit } from "@/infra/audit";
+import { getCurrentUser } from "@/app/_shared/session";
+import { getDb } from "@/infra/db/client";
+import { NotFoundError } from "@/infra/validation";
+import { getQuote } from "@/modules/quotes/service";
+import { loadClientView, type QuoteClientView } from "@/modules/quotes/views";
 
 /** Carrega a visão do cliente para exportação; devolve a resposta de erro se não houver acesso. */
 export async function prepareExport(

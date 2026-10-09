@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Badge, btnPrimary, Card, EmptyState, PageHeader, tdCls, thCls } from "@/components/ui";
+import { Badge, btnPrimary, Card, EmptyState, PageHeader, tdCls, thCls } from "@/ui/primitives";
 import { formatDate } from "@/domain/format";
 import { formatBRL } from "@/domain/money";
-import { requireUser } from "@/server/auth/current";
-import { getDb } from "@/server/db/client";
-import { quoteTotals } from "@/server/quotes/guard";
-import { expireOverdueQuotes, getItems, listQuotes } from "@/server/quotes/service";
+import { requireUser } from "@/app/_shared/session";
+import { getDb } from "@/infra/db/client";
+import { quoteTotals } from "@/modules/quotes/guard";
+import { expireOverdueQuotes, getItems, listQuotes } from "@/modules/quotes/service";
 
 const FILTERS = [
   ["", "Todos"], ["em_elaboracao", "Em elaboração"], ["enviado", "Enviados"],

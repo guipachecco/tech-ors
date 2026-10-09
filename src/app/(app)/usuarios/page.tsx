@@ -1,10 +1,10 @@
-import { ActionForm, InlineAction } from "@/components/ActionForm";
-import { Alert, Badge, btnSecondary, Card, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/components/ui";
+import { ActionForm, InlineAction } from "@/ui/ActionForm";
+import { Alert, Badge, btnSecondary, Card, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/ui/primitives";
 import { formatDate } from "@/domain/format";
-import { requireCan } from "@/server/auth/current";
-import { can } from "@/server/auth/permissions";
-import { getDb } from "@/server/db/client";
-import { listUsers } from "@/server/users";
+import { requireCan } from "@/app/_shared/session";
+import { can } from "@/modules/auth/permissions";
+import { getDb } from "@/infra/db/client";
+import { listUsers } from "@/modules/users/service";
 import { createUserAction, resetMfaAction, resetPasswordAction, toggleAccessAction } from "./actions";
 
 const PROFILE_LABEL = { root: "Root", administrador: "Administrador", vendedor: "Vendedor" } as const;

@@ -8,13 +8,13 @@
     "start": "next start",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "create-admin": "tsx --env-file=.env scripts/create-admin.ts",
-    "create-root": "tsx --env-file=.env scripts/create-root.ts",
-    "promote-root": "tsx --env-file=.env scripts/promote-root.ts",
-    "backup": "tsx --env-file=.env scripts/backup.ts",
-    "reset-2fa": "tsx --env-file=.env scripts/reset-2fa.ts",
-    "seed:dev": "tsx --env-file=.env --env-file=.env.dev scripts/dev-seed.ts",
-    "dev:demo": "node scripts/dev-demo.mjs"
+    "create-admin": "tsx --env-file=.env scripts/admin/create-admin.ts",
+    "create-root": "tsx --env-file=.env scripts/admin/create-root.ts",
+    "promote-root": "tsx --env-file=.env scripts/admin/promote-root.ts",
+    "backup": "tsx --env-file=.env scripts/ops/backup.ts",
+    "reset-2fa": "tsx --env-file=.env scripts/admin/reset-2fa.ts",
+    "seed:dev": "tsx --env-file=.env --env-file=.env.dev scripts/dev/dev-seed.ts",
+    "dev:demo": "node scripts/dev/dev-demo.mjs"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.2",

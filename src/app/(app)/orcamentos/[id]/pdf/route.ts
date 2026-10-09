@@ -1,4 +1,4 @@
-import { buildQuotePdf, findLogo } from "@/server/export/pdf";
+import { buildQuotePdf, findLogo } from "@/modules/exports/pdf";
 import { prepareExport } from "../export";
 
 export const runtime = "nodejs";

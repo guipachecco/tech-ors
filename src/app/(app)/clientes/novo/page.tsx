@@ -1,6 +1,6 @@
-import { ClientForm } from "@/components/ClientForm";
-import { Card, PageHeader } from "@/components/ui";
-import { requireUser } from "@/server/auth/current";
+import { ClientForm } from "@/app/(app)/clientes/_components/ClientForm";
+import { Card, PageHeader } from "@/ui/primitives";
+import { requireUser } from "@/app/_shared/session";
 
 export default async function NovoClientePage() {
   await requireUser();

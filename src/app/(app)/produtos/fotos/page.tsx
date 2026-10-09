@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Card, PageHeader, btnSecondary } from "@/components/ui";
-import { requireUser } from "@/server/auth/current";
+import { Card, PageHeader, btnSecondary } from "@/ui/primitives";
+import { requireUser } from "@/app/_shared/session";
 import { BulkPhotos } from "./BulkPhotos";
 
 export default async function FotosEmLotePage() {

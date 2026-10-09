@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { logoutAction } from "@/app/login/actions";
-import { AppNav } from "@/components/AppNav";
-import { Logo } from "@/components/Logo";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { requireUser } from "@/server/auth/current";
-import { can } from "@/server/auth/permissions";
+import { AppNav } from "@/ui/AppNav";
+import { Logo } from "@/ui/Logo";
+import { ThemeToggle } from "@/ui/ThemeToggle";
+import { requireUser } from "@/app/_shared/session";
+import { can } from "@/modules/auth/permissions";
 
 export const dynamic = "force-dynamic";
 

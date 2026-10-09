@@ -1,21 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ActionForm, AutoSaveForm, InlineAction } from "@/components/ActionForm";
+import { ActionForm, AutoSaveForm, InlineAction } from "@/ui/ActionForm";
 import {
   Alert, Badge, btnDanger, btnPrimary, btnSecondary, Card, EmptyState, Field, inputCls, PageHeader, tdCls, TextInput, thCls,
-} from "@/components/ui";
+} from "@/ui/primitives";
 import { formatDate } from "@/domain/format";
 import { formatBps, formatBRL } from "@/domain/money";
-import { requireUser } from "@/server/auth/current";
-import { can } from "@/server/auth/permissions";
-import { searchProducts } from "@/server/catalog/products";
-import { getClient } from "@/server/clients";
-import { getDb } from "@/server/db/client";
-import type { SendBlockReason } from "@/server/quotes/errors";
-import { checkSendable, OVERRIDABLE, quoteTotals } from "@/server/quotes/guard";
-import { getItems, getQuote, quoteDrift } from "@/server/quotes/service";
-import { photoVersionsFor, toItemViews } from "@/server/quotes/views";
-import { NotFoundError } from "@/server/validation";
+import { requireUser } from "@/app/_shared/session";
+import { can } from "@/modules/auth/permissions";
+import { searchProducts } from "@/modules/catalog/products/service";
+import { getClient } from "@/modules/clients/service";
+import { getDb } from "@/infra/db/client";
+import type { SendBlockReason } from "@/modules/quotes/errors";
+import { checkSendable, OVERRIDABLE, quoteTotals } from "@/modules/quotes/guard";
+import { getItems, getQuote, quoteDrift } from "@/modules/quotes/service";
+import { photoVersionsFor, toItemViews } from "@/modules/quotes/views";
+import { NotFoundError } from "@/infra/validation";
 import {
   addItemAction, addServiceAction, duplicateAction, outcomeAction, removeItemAction, repriceItemAction,
   sendAction, setFreteAction, updateDetailsAction, updateItemAction,

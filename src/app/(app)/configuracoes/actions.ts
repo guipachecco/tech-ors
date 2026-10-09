@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { guard, intField, optStr, percentField, str, type ActionState } from "@/server/actions";
-import { requireCan } from "@/server/auth/current";
-import { deleteMarginRule, saveMarginRule } from "@/server/catalog/margins";
-import { saveSettings } from "@/server/catalog/settings";
-import { getDb } from "@/server/db/client";
+import { guard, intField, optStr, percentField, str, type ActionState } from "@/app/_shared/actions";
+import { requireCan } from "@/app/_shared/session";
+import { deleteMarginRule, saveMarginRule } from "@/modules/catalog/margins/service";
+import { saveSettings } from "@/modules/catalog/settings/service";
+import { getDb } from "@/infra/db/client";
 
 export async function saveSettingsAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requireCan("settings:manage");

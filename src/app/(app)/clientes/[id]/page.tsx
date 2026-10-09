@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
-import { ClientForm } from "@/components/ClientForm";
-import { InlineAction } from "@/components/ActionForm";
-import { Card, btnPrimary, PageHeader } from "@/components/ui";
-import { requireUser } from "@/server/auth/current";
-import { getClient } from "@/server/clients";
-import { getDb } from "@/server/db/client";
-import { NotFoundError } from "@/server/validation";
+import { ClientForm } from "@/app/(app)/clientes/_components/ClientForm";
+import { InlineAction } from "@/ui/ActionForm";
+import { Card, btnPrimary, PageHeader } from "@/ui/primitives";
+import { requireUser } from "@/app/_shared/session";
+import { getClient } from "@/modules/clients/service";
+import { getDb } from "@/infra/db/client";
+import { NotFoundError } from "@/infra/validation";
 import { createQuoteAction } from "../../orcamentos/actions";
 
 export default async function ClientePage({ params }: { params: Promise<{ id: string }> }) {

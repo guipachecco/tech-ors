@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ActionForm } from "@/components/ActionForm";
-import { Card, EmptyState, Field, PageHeader, tdCls, TextInput, thCls } from "@/components/ui";
-import { requireUser } from "@/server/auth/current";
-import { listSuppliers } from "@/server/catalog/suppliers";
-import { getDb } from "@/server/db/client";
+import { ActionForm } from "@/ui/ActionForm";
+import { Card, EmptyState, Field, PageHeader, tdCls, TextInput, thCls } from "@/ui/primitives";
+import { requireUser } from "@/app/_shared/session";
+import { listSuppliers } from "@/modules/catalog/suppliers/service";
+import { getDb } from "@/infra/db/client";
 import { saveSupplierAction } from "./actions";
 
 export default async function FornecedoresPage({ searchParams }: { searchParams: Promise<{ edit?: string }> }) {

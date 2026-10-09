@@ -1,18 +1,18 @@
 import { notFound } from "next/navigation";
-import { ActionForm, InlineAction } from "@/components/ActionForm";
-import { ProductForm } from "@/components/ProductForm";
-import { Alert, Badge, btnDanger, Card, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/components/ui";
+import { ActionForm, InlineAction } from "@/ui/ActionForm";
+import { ProductForm } from "@/app/(app)/produtos/_components/ProductForm";
+import { Alert, Badge, btnDanger, Card, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/ui/primitives";
 import { defaultValidUntil } from "@/domain/costs";
 import { formatDate } from "@/domain/format";
 import { formatBps, formatBRL } from "@/domain/money";
-import { requireUser } from "@/server/auth/current";
-import { can } from "@/server/auth/permissions";
-import { resolveRule } from "@/server/catalog/margins";
-import { listOffersForProduct } from "@/server/catalog/offers";
-import { getProductRow, getProductView } from "@/server/catalog/products";
-import { listSuppliers } from "@/server/catalog/suppliers";
-import { getDb } from "@/server/db/client";
-import { NotFoundError } from "@/server/validation";
+import { requireUser } from "@/app/_shared/session";
+import { can } from "@/modules/auth/permissions";
+import { resolveRule } from "@/modules/catalog/margins/service";
+import { listOffersForProduct } from "@/modules/catalog/costs/service";
+import { getProductRow, getProductView } from "@/modules/catalog/products/service";
+import { listSuppliers } from "@/modules/catalog/suppliers/service";
+import { getDb } from "@/infra/db/client";
+import { NotFoundError } from "@/infra/validation";
 import { addOfferAction, removePhotoAction, uploadPhotoAction } from "../actions";
 
 export default async function ProdutoPage({ params }: { params: Promise<{ id: string }> }) {

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Card, EmptyState, btnPrimary, btnSecondary, inputCls, PageHeader, tdCls, thCls } from "@/components/ui";
+import { Card, EmptyState, btnPrimary, btnSecondary, inputCls, PageHeader, tdCls, thCls } from "@/ui/primitives";
 import { formatCnpj } from "@/domain/cnpj";
-import { requireUser } from "@/server/auth/current";
-import { searchClients } from "@/server/clients";
-import { getDb } from "@/server/db/client";
+import { requireUser } from "@/app/_shared/session";
+import { searchClients } from "@/modules/clients/service";
+import { getDb } from "@/infra/db/client";
 
 export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await requireUser();

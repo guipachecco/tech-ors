@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ActionForm } from "@/components/ActionForm";
-import { Alert, Card, Field, inputCls, PageHeader } from "@/components/ui";
-import { requireUser } from "@/server/auth/current";
-import { searchClients } from "@/server/clients";
-import { getDb } from "@/server/db/client";
+import { ActionForm } from "@/ui/ActionForm";
+import { Alert, Card, Field, inputCls, PageHeader } from "@/ui/primitives";
+import { requireUser } from "@/app/_shared/session";
+import { searchClients } from "@/modules/clients/service";
+import { getDb } from "@/infra/db/client";
 import { createQuoteAction } from "../actions";
 
 export default async function NovoOrcamentoPage() {

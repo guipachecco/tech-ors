@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AuthBackground } from "@/components/AuthBackground";
-import { getCurrentUser, RECOVERY_COOKIE } from "@/server/auth/current";
-import { decryptSecret } from "@/server/auth/totp";
-import { totpKey } from "@/server/auth/totpKey";
+import { AuthBackground } from "@/ui/AuthBackground";
+import { getCurrentUser, RECOVERY_COOKIE } from "@/app/_shared/session";
+import { decryptSecret } from "@/modules/auth/totp";
+import { totpKey } from "@/modules/auth/totpKey";
 import { RecoveryCodes } from "./RecoveryCodes";
 
 export const metadata: Metadata = { title: "Códigos de recuperação" };

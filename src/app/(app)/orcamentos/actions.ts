@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { dateField, guard, intField, moneyField, optStr, percentField, str, type ActionState } from "@/server/actions";
-import { requireUser } from "@/server/auth/current";
-import { getDb } from "@/server/db/client";
+import { dateField, guard, intField, moneyField, optStr, percentField, str, type ActionState } from "@/app/_shared/actions";
+import { requireUser } from "@/app/_shared/session";
+import { getDb } from "@/infra/db/client";
 import {
   addProductItem, addServiceItem, createQuote, duplicateQuote, removeItem, repriceItem,
   sendQuote, setFrete, setOutcome, updateItem, updateQuoteDetails, getQuote,
-} from "@/server/quotes/service";
-import { ValidationError } from "@/server/validation";
+} from "@/modules/quotes/service";
+import { ValidationError } from "@/infra/validation";
 
 const refresh = (quoteId: number) => {
   revalidatePath(`/orcamentos/${quoteId}`);

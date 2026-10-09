@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { FIELDS, type Field, type Mapping } from "@/domain/import";
-import { guard, intField, optStr, type ActionState } from "@/server/actions";
-import { requireCan } from "@/server/auth/current";
-import { applyImport, createImport, ImportError, MAX_FILE_BYTES, saveImportMapping } from "@/server/catalog/import";
-import { getDb } from "@/server/db/client";
+import { guard, intField, optStr, type ActionState } from "@/app/_shared/actions";
+import { requireCan } from "@/app/_shared/session";
+import { applyImport, createImport, ImportError, MAX_FILE_BYTES, saveImportMapping } from "@/modules/catalog/import/service";
+import { getDb } from "@/infra/db/client";
 
 /** Passo 1: recebe a planilha do fornecedor. Nada é gravado no catálogo ainda. */
 export async function uploadImportAction(_prev: ActionState, fd: FormData): Promise<ActionState> {

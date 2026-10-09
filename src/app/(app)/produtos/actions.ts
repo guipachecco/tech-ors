@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { dateField, guard, intField, moneyField, optStr, str, type ActionState } from "@/server/actions";
-import { requireCan, requireUser } from "@/server/auth/current";
-import { addCostOffer } from "@/server/catalog/offers";
-import { MAX_PHOTO_BYTES, PhotoError, removeProductPhoto, saveProductPhoto } from "@/server/catalog/photos";
-import { saveProduct } from "@/server/catalog/products";
-import { getDb } from "@/server/db/client";
+import { dateField, guard, intField, moneyField, optStr, str, type ActionState } from "@/app/_shared/actions";
+import { requireCan, requireUser } from "@/app/_shared/session";
+import { addCostOffer } from "@/modules/catalog/costs/service";
+import { MAX_PHOTO_BYTES, PhotoError, removeProductPhoto, saveProductPhoto } from "@/modules/catalog/photos/service";
+import { saveProduct } from "@/modules/catalog/products/service";
+import { getDb } from "@/infra/db/client";
 
 export async function saveProductAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requireUser();

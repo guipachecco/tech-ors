@@ -2,12 +2,12 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { recordAudit } from "@/server/audit";
-import { cookieSecure, MFA_COOKIE, RECOVERY_COOKIE, startSession } from "@/server/auth/current";
-import { completeEnrollment, discardChallenge, verifyLoginCode } from "@/server/auth/mfa";
-import { encryptSecret } from "@/server/auth/totp";
-import { totpKey } from "@/server/auth/totpKey";
-import { getDb } from "@/server/db/client";
+import { recordAudit } from "@/infra/audit";
+import { cookieSecure, MFA_COOKIE, RECOVERY_COOKIE, startSession } from "@/app/_shared/session";
+import { completeEnrollment, discardChallenge, verifyLoginCode } from "@/modules/auth/mfa";
+import { encryptSecret } from "@/modules/auth/totp";
+import { totpKey } from "@/modules/auth/totpKey";
+import { getDb } from "@/infra/db/client";
 
 export type MfaState = { error?: string } | null;
 

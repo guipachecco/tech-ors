@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { guard, intField, str, type ActionState } from "@/server/actions";
-import { requireCan } from "@/server/auth/current";
-import { getDb } from "@/server/db/client";
-import { resetUserMfa } from "@/server/auth/mfa";
-import { createUser, resetPassword, updateUserAccess } from "@/server/users";
+import { guard, intField, str, type ActionState } from "@/app/_shared/actions";
+import { requireCan } from "@/app/_shared/session";
+import { getDb } from "@/infra/db/client";
+import { resetUserMfa } from "@/modules/auth/mfa";
+import { createUser, resetPassword, updateUserAccess } from "@/modules/users/service";
 
 export async function createUserAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const admin = await requireCan("user:manage");

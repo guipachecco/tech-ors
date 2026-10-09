@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { guard, optStr, str, type ActionState } from "@/server/actions";
-import { requireUser } from "@/server/auth/current";
-import { saveSupplier } from "@/server/catalog/suppliers";
-import { getDb } from "@/server/db/client";
+import { guard, optStr, str, type ActionState } from "@/app/_shared/actions";
+import { requireUser } from "@/app/_shared/session";
+import { saveSupplier } from "@/modules/catalog/suppliers/service";
+import { getDb } from "@/infra/db/client";
 
 export async function saveSupplierAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requireUser();

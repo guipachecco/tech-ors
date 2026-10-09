@@ -1,4 +1,4 @@
-import { buildQuoteXlsx } from "@/server/export/xlsx";
+import { buildQuoteXlsx } from "@/modules/exports/xlsx";
 import { prepareExport } from "../export";
 
 export const runtime = "nodejs";

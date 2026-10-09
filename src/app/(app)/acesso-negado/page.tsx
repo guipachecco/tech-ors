@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Card, PageHeader } from "@/components/ui";
-import { requireUser } from "@/server/auth/current";
+import { Card, PageHeader } from "@/ui/primitives";
+import { requireUser } from "@/app/_shared/session";
 
 export default async function AcessoNegadoPage() {
   await requireUser();

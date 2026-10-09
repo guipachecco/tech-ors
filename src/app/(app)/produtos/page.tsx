@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { formatBRL } from "@/domain/money";
 import { formatDate } from "@/domain/format";
-import { Badge, btnPrimary, btnSecondary, Card, EmptyState, inputCls, PageHeader, tdCls, thCls } from "@/components/ui";
-import { requireUser } from "@/server/auth/current";
-import { searchProducts } from "@/server/catalog/products";
-import { getDb } from "@/server/db/client";
+import { Badge, btnPrimary, btnSecondary, Card, EmptyState, inputCls, PageHeader, tdCls, thCls } from "@/ui/primitives";
+import { requireUser } from "@/app/_shared/session";
+import { searchProducts } from "@/modules/catalog/products/service";
+import { getDb } from "@/infra/db/client";
 
 export default async function ProdutosPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const user = await requireUser();

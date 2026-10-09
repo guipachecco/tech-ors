@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ActionForm } from "@/components/ActionForm";
-import { Alert, Badge, btnPrimary, btnSecondary, Card, EmptyState, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/components/ui";
+import { ActionForm } from "@/ui/ActionForm";
+import { Alert, Badge, btnPrimary, btnSecondary, Card, EmptyState, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/ui/primitives";
 import { FIELD_LABELS, FIELDS } from "@/domain/import";
 import { formatBRL } from "@/domain/money";
-import { requireCan } from "@/server/auth/current";
-import { analyzeImport, getImportRecord, importResult, type RowStatus } from "@/server/catalog/import";
-import { getDb } from "@/server/db/client";
-import { NotFoundError } from "@/server/validation";
+import { requireCan } from "@/app/_shared/session";
+import { analyzeImport, getImportRecord, importResult, type RowStatus } from "@/modules/catalog/import/service";
+import { getDb } from "@/infra/db/client";
+import { NotFoundError } from "@/infra/validation";
 import { applyImportAction, saveMappingAction } from "../actions";
 
 const STATUS: Record<RowStatus, { label: string; kind: string; hint: string }> = {

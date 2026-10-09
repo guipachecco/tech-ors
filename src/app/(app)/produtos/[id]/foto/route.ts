@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { getCurrentUser } from "@/server/auth/current";
-import { getProductPhoto } from "@/server/catalog/photos";
-import { getDb } from "@/server/db/client";
+import { getCurrentUser } from "@/app/_shared/session";
+import { getProductPhoto } from "@/modules/catalog/photos/service";
+import { getDb } from "@/infra/db/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

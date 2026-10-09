@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AuthBackground } from "@/components/AuthBackground";
+import { AuthBackground } from "@/ui/AuthBackground";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = { title: "Entrar" };

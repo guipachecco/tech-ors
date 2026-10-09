@@ -1,6 +1,6 @@
-import { Card, PageHeader } from "@/components/ui";
-import { ProductForm } from "@/components/ProductForm";
-import { requireUser } from "@/server/auth/current";
+import { Card, PageHeader } from "@/ui/primitives";
+import { ProductForm } from "@/app/(app)/produtos/_components/ProductForm";
+import { requireUser } from "@/app/_shared/session";
 
 export default async function NovoProdutoPage() {
   await requireUser();

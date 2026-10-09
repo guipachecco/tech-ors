@@ -1,10 +1,10 @@
-import { ActionForm, InlineAction } from "@/components/ActionForm";
-import { btnDanger, Card, EmptyState, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/components/ui";
+import { ActionForm, InlineAction } from "@/ui/ActionForm";
+import { btnDanger, Card, EmptyState, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/ui/primitives";
 import { formatBps } from "@/domain/money";
-import { requireCan } from "@/server/auth/current";
-import { listMarginRules } from "@/server/catalog/margins";
-import { getSettings } from "@/server/catalog/settings";
-import { getDb } from "@/server/db/client";
+import { requireCan } from "@/app/_shared/session";
+import { listMarginRules } from "@/modules/catalog/margins/service";
+import { getSettings } from "@/modules/catalog/settings/service";
+import { getDb } from "@/infra/db/client";
 import { deleteRuleAction, saveRuleAction, saveSettingsAction } from "./actions";
 
 const pct = (bps: number) => (bps / 100).toFixed(2).replace(".", ",");
