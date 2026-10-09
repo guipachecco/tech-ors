@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { dateField, guard, intField, moneyField, optStr, str, type ActionState } from "@/server/actions";
 import { requireCan, requireUser } from "@/server/auth/current";
 import { addCostOffer } from "@/server/catalog/offers";
+import { MAX_PHOTO_BYTES, PhotoError, removeProductPhoto, saveProductPhoto } from "@/server/catalog/photos";
 import { saveProduct } from "@/server/catalog/products";
 import { getDb } from "@/server/db/client";
 
@@ -48,4 +49,29 @@ export async function addOfferAction(_prev: ActionState, fd: FormData): Promise<
     return "Custo atualizado.";
   });
   return result;
+}
+
+export async function uploadPhotoAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const productId = intField(fd, "produtoId");
+  return guard(async () => {
+    const file = fd.get("foto");
+    if (!(file instanceof File) || file.size === 0) throw new PhotoError("Escolha uma foto (JPG, PNG ou WebP).");
+    if (file.size > MAX_PHOTO_BYTES) throw new PhotoError(`A foto passa de ${MAX_PHOTO_BYTES / 1024 / 1024} MB.`);
+    await saveProductPhoto(getDb(), user, productId, Buffer.from(await file.arrayBuffer()));
+    revalidatePath(`/produtos/${productId}`);
+    revalidatePath("/produtos");
+    return "Foto salva.";
+  });
+}
+
+export async function removePhotoAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const productId = intField(fd, "produtoId");
+  return guard(() => {
+    removeProductPhoto(getDb(), user, productId);
+    revalidatePath(`/produtos/${productId}`);
+    revalidatePath("/produtos");
+    return "Foto removida.";
+  });
 }

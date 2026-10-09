@@ -11,6 +11,7 @@ function make(n: number, clientName = "Indústria São João <b>Ltda</b>"): Quot
     cliente: { razaoSocial: clientName, cnpj: "11222333000181", contato: "Ação", email: null, telefone: null },
     itens: Array.from({ length: n }, (_, i) => ({
       descricao: `Switch 24 portas PoE — item ${i + 1} com descrição bem longa para quebrar linha na tabela do PDF`,
+      detalhes: "Gerenciável, 24 portas Gigabit PoE+, 4 uplinks SFP, fonte interna",
       quantidade: 2,
       precoUnitarioCentavos: 125000,
       descontoBps: i % 2 === 0 ? 500 : 0,
@@ -34,6 +35,17 @@ describe("buildQuotePdf", () => {
     const many = await buildQuotePdf(make(60));
     expect(many.subarray(0, 5).toString()).toBe("%PDF-");
     expect(many.length).toBeGreaterThan(one.length);
+  }, 30_000);
+
+  it("embeds the product photo and grows the file", async () => {
+    const sharp = (await import("sharp")).default;
+    const photo = await sharp({ create: { width: 640, height: 480, channels: 3, background: "#3366aa" } }).jpeg().toBuffer();
+    const base = make(2);
+    const withPhoto = { ...base, itens: base.itens.map((it) => ({ ...it, foto: photo })) };
+    const a = await buildQuotePdf(base);
+    const b = await buildQuotePdf(withPhoto);
+    expect(b.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(b.length).toBeGreaterThan(a.length + 1000);
   }, 30_000);
 
   it("does not fail without a logo or with hostile text", async () => {

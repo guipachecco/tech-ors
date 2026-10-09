@@ -4,7 +4,8 @@ import { can } from "../auth/permissions";
 import type { SessionUser } from "../auth/sessions";
 import { getSettings } from "../catalog/settings";
 import type { Db } from "../db/client";
-import { clientes } from "../db/schema";
+import { getProductPhoto } from "../catalog/photos";
+import { clientes, produtos } from "../db/schema";
 import { computeItem, isItemBelowMinimum, isItemCostExpired, quoteTotals, type Quote, type QuoteItem } from "./guard";
 import { getItems, getQuote } from "./service";
 
@@ -13,6 +14,10 @@ export type ItemView = {
   id: number;
   tipo: "produto" | "servico";
   descricao: string;
+  detalhes: string;
+  produtoId: number | null;
+  /** Versão da foto do produto (null = sem foto); usada na URL da miniatura. */
+  fotoVersao: number | null;
   quantidade: number;
   precoUnitarioCentavos: Cents;
   descontoBps: Bps;
@@ -23,7 +28,7 @@ export type ItemView = {
   margemEfetivaBps?: Bps | null;
 };
 
-export function toItemViews(items: QuoteItem[], user: SessionUser, now = new Date()): ItemView[] {
+export function toItemViews(items: QuoteItem[], user: SessionUser, now = new Date(), photoVersions: Map<number, number> = new Map()): ItemView[] {
   const showCost = can(user, "cost:view");
   return items.map((it) => {
     const c = computeItem(it);
@@ -31,6 +36,9 @@ export function toItemViews(items: QuoteItem[], user: SessionUser, now = new Dat
       id: it.id,
       tipo: it.tipo,
       descricao: it.descricao,
+      detalhes: it.detalhes,
+      produtoId: it.produtoId,
+      fotoVersao: it.produtoId !== null ? (photoVersions.get(it.produtoId) ?? null) : null,
       quantidade: it.quantidade,
       precoUnitarioCentavos: it.precoUnitarioCentavos,
       descontoBps: it.descontoBps,
@@ -53,7 +61,7 @@ export type QuoteClientView = {
   validoAte: Date;
   empresa: { nome: string; cnpj: string; endereco: string; telefone: string; email: string };
   cliente: { razaoSocial: string; cnpj: string | null; contato: string | null; email: string | null; telefone: string | null };
-  itens: Array<{ descricao: string; quantidade: number; precoUnitarioCentavos: Cents; descontoBps: Bps; totalCentavos: Cents }>;
+  itens: Array<{ descricao: string; detalhes: string; foto?: Buffer; quantidade: number; precoUnitarioCentavos: Cents; descontoBps: Bps; totalCentavos: Cents }>;
   subtotalCentavos: Cents;
   descontoCentavos: Cents;
   freteCentavos: Cents;
@@ -88,6 +96,8 @@ export function toClientView(db: Db, quote: Quote, items: QuoteItem[]): QuoteCli
     },
     itens: items.map((it) => ({
       descricao: it.descricao,
+      detalhes: it.detalhes,
+      foto: it.produtoId !== null ? getProductPhoto(db, it.produtoId)?.data : undefined,
       quantidade: it.quantidade,
       precoUnitarioCentavos: it.precoUnitarioCentavos,
       descontoBps: it.descontoBps,
@@ -103,4 +113,15 @@ export function toClientView(db: Db, quote: Quote, items: QuoteItem[]): QuoteCli
 
 export function loadClientView(db: Db, quoteId: number): QuoteClientView {
   return toClientView(db, getQuote(db, quoteId), getItems(db, quoteId));
+}
+
+/** Versões das fotos dos produtos do orçamento (produto → versão), para as miniaturas da tela. */
+export function photoVersionsFor(db: Db, items: QuoteItem[]): Map<number, number> {
+  const ids = new Set(items.flatMap((i) => (i.produtoId !== null ? [i.produtoId] : [])));
+  const out = new Map<number, number>();
+  if (ids.size === 0) return out;
+  for (const p of db.select({ id: produtos.id, v: produtos.fotoVersao }).from(produtos).all()) {
+    if (ids.has(p.id) && p.v !== null) out.set(p.id, p.v);
+  }
+  return out;
 }

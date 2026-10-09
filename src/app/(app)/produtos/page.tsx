@@ -34,8 +34,16 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Pro
                   <tr key={p.id} className="hover:bg-slate-50">
                     <td className={`${tdCls} font-mono text-xs`}>{p.sku}</td>
                     <td className={tdCls}>
-                      <Link href={`/produtos/${p.id}`} className="font-medium text-brand-700 hover:underline">{p.fabricante} {p.modelo}</Link>
-                      {p.descricao && <div className="max-w-md truncate text-xs text-slate-500">{p.descricao}</div>}
+                      <div className="flex items-center gap-3">
+                        {p.fotoVersao !== null && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={`/produtos/${p.id}/foto?v=${p.fotoVersao}`} alt="" loading="lazy" className="h-10 w-14 shrink-0 rounded border border-slate-200 bg-white object-contain" />
+                        )}
+                        <div className="min-w-0">
+                          <Link href={`/produtos/${p.id}`} className="font-medium text-brand-700 hover:underline">{p.fabricante} {p.modelo}</Link>
+                          {p.descricao && <div className="max-w-md truncate text-xs text-slate-500">{p.descricao}</div>}
+                        </div>
+                      </div>
                     </td>
                     <td className={tdCls}>{p.categoria}</td>
                     <td className={tdCls}>{p.precoVendaCentavos === null ? "—" : formatBRL(p.precoVendaCentavos)}</td>

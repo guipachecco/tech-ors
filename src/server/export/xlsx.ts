@@ -50,7 +50,8 @@ export async function buildQuoteXlsx(view: QuoteClientView): Promise<Buffer> {
   view.itens.forEach((it, idx) => {
     const r = headerRow + 1 + idx;
     ws.getCell(r, 1).value = idx + 1;
-    ws.getCell(r, 2).value = neutralizeFormula(it.descricao);
+    ws.getCell(r, 2).value = neutralizeFormula(it.detalhes ? `${it.descricao}\n${it.detalhes}` : it.descricao);
+    ws.getCell(r, 2).alignment = { wrapText: true, vertical: "top" };
     ws.getCell(r, 3).value = it.quantidade;
     ws.getCell(r, 4).value = reais(it.precoUnitarioCentavos);
     ws.getCell(r, 4).numFmt = money;

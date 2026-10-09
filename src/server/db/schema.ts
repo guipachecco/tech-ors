@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { blob, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const now = sql`(unixepoch() * 1000)`;
 const createdAt = () => integer("criado_em", { mode: "timestamp_ms" }).notNull().default(now);
@@ -67,6 +67,8 @@ export const produtos = sqliteTable(
     descricao: text("descricao").notNull().default(""),
     especificacoes: text("especificacoes"),
     busca: text("busca").notNull(),
+    /** Momento do último envio de foto (null = sem foto). Também serve para renovar o cache do navegador. */
+    fotoVersao: integer("foto_versao"),
     ativo: integer("ativo", { mode: "boolean" }).notNull().default(true),
     criadoEm: createdAt(),
     atualizadoEm: integer("atualizado_em", { mode: "timestamp_ms" }).notNull().default(now),
@@ -166,6 +168,8 @@ export const orcamentoItens = sqliteTable(
     tipo: text("tipo", { enum: ["produto", "servico"] }).notNull(),
     produtoId: integer("produto_id").references(() => produtos.id),
     descricao: text("descricao").notNull(),
+    /** Especificações (texto menor sob o título do item). */
+    detalhes: text("detalhes").notNull().default(""),
     quantidade: integer("quantidade").notNull(),
     custoCentavos: integer("custo_centavos").notNull().default(0),
     margemBps: integer("margem_bps").notNull().default(0),
@@ -218,4 +222,11 @@ export const importacoes = sqliteTable("importacoes", {
   aplicadaEm: integer("aplicada_em", { mode: "timestamp_ms" }),
   expiraEm: integer("expira_em", { mode: "timestamp_ms" }).notNull(),
   criadoEm: createdAt(),
+});
+
+/** Foto do produto, já normalizada (JPEG, até 1000 px). Tabela à parte para não pesar nas listagens. */
+export const produtoFotos = sqliteTable("produto_fotos", {
+  produtoId: integer("produto_id").primaryKey().references(() => produtos.id),
+  dados: blob("dados", { mode: "buffer" }).notNull(),
+  atualizadoEm: integer("atualizado_em", { mode: "timestamp_ms" }).notNull().default(now),
 });

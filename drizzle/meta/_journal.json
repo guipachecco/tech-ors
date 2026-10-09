@@ -22,6 +22,13 @@
       "when": 1791561152228,
       "tag": "0002_safe_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791563742047,
+      "tag": "0003_curious_jimmy_woo",
+      "breakpoints": true
     }
   ]
 }

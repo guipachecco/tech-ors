@@ -26,6 +26,11 @@ Quando o fornecedor manda os preços em .xlsx: **Produtos → Importar planilha*
 
 O produto é reconhecido pelo **código do fornecedor** (de importações anteriores) ou pelo **SKU interno**. Cada importação adiciona um custo ao histórico; nada é sobrescrito. Quem importa precisa de permissão para alterar custos.
 
+## Foto e descrição do produto
+
+- Na página do produto há o cartão **Foto do produto**: envie um JPG, PNG ou WebP (até 8 MB). O sistema ajusta a imagem (máx. 1000 px, fundo branco, sem dados da câmera) e ela aparece na lista de produtos, na tela do orçamento e no **PDF** do cliente. (A planilha XLSX não leva imagens.)
+- O campo **Descrição** do produto vira as **especificações** do item no orçamento: o título do item é fabricante + modelo, e as especificações aparecem logo abaixo, em texto menor. Quando são longas, ficam recolhidas na tela ("ver tudo") e completas no PDF.
+
 ## Montar um orçamento
 
 1. **Orçamentos → Novo orçamento →** escolha o cliente.

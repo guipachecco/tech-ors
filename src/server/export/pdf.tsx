@@ -22,6 +22,9 @@ const s = StyleSheet.create({
   bold: { fontFamily: "Helvetica-Bold" },
   tHead: { flexDirection: "row", backgroundColor: BRAND, color: "#ffffff", paddingVertical: 5, paddingHorizontal: 4 },
   tRow: { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
+  photo: { width: 88, height: 58, objectFit: "contain", marginRight: 8 },
+  itemTitle: { fontFamily: "Helvetica-Bold" },
+  itemDetails: { fontSize: 8, color: MUTED, marginTop: 2, lineHeight: 1.3 },
   cN: { width: "6%" },
   cDesc: { width: "46%" },
   cQty: { width: "8%", textAlign: "right" },
@@ -96,7 +99,15 @@ function QuotePdf({ view, logo }: { view: QuoteClientView; logo?: LogoSrc }) {
         {view.itens.map((it, i) => (
           <View key={i} style={s.tRow} wrap={false}>
             <Text style={s.cN}>{i + 1}</Text>
-            <Text style={s.cDesc}>{it.descricao}</Text>
+            <View style={s.cDesc}>
+              <View style={{ flexDirection: "row" }}>
+                {it.foto ? <Image src={{ data: it.foto, format: "jpg" }} style={s.photo} /> : null}
+                <View style={{ flex: 1 }}>
+                  <Text style={s.itemTitle}>{it.descricao}</Text>
+                  {it.detalhes ? <Text style={s.itemDetails}>{it.detalhes}</Text> : null}
+                </View>
+              </View>
+            </View>
             <Text style={s.cQty}>{it.quantidade}</Text>
             <Text style={s.cUnit}>{formatBRL(it.precoUnitarioCentavos)}</Text>
             <Text style={s.cDisc}>{it.descontoBps > 0 ? formatBps(it.descontoBps) : ""}</Text>

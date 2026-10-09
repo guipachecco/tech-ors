@@ -200,3 +200,32 @@ describe("views", () => {
     expect(db.select().from(ofertasCusto).all()).toHaveLength(1);
   });
 });
+
+describe("item title, specifications and photo", () => {
+  it("stores the title and the specifications separately", () => {
+    const { db, admin, client, product } = setup();
+    const q = createQuote(db, admin, client.id, NOW);
+    const it = addProductItem(db, admin, q.id, product.id, 1, NOW);
+    expect(it.descricao).toBe("SMS Nobreak 1500");
+    expect(it.detalhes).toBe("senoidal");
+    const [view] = toItemViews(getItems(db, q.id), admin, NOW);
+    expect(view).toMatchObject({ descricao: "SMS Nobreak 1500", detalhes: "senoidal", produtoId: product.id, fotoVersao: null });
+  });
+
+  it("carries the product photo into the client view and the screen view", async () => {
+    const sharp = (await import("sharp")).default;
+    const { saveProductPhoto } = await import("@/server/catalog/photos");
+    const { photoVersionsFor } = await import("@/server/quotes/views");
+    const { db, admin, client, product } = setup();
+    const q = createQuote(db, admin, client.id, NOW);
+    addProductItem(db, admin, q.id, product.id, 1, NOW);
+    expect(toClientView(db, getQuote(db, q.id), getItems(db, q.id)).itens[0].foto).toBeUndefined();
+
+    await saveProductPhoto(db, admin, product.id, await sharp({ create: { width: 80, height: 60, channels: 3, background: "#123456" } }).png().toBuffer(), NOW);
+    const items = getItems(db, q.id);
+    const client_ = toClientView(db, getQuote(db, q.id), items);
+    expect(Buffer.isBuffer(client_.itens[0].foto)).toBe(true);
+    const [view] = toItemViews(items, admin, NOW, photoVersionsFor(db, items));
+    expect(view.fotoVersao).toBe(NOW.getTime());
+  });
+});

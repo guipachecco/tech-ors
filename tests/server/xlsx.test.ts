@@ -10,8 +10,8 @@ const view: QuoteClientView = {
   empresa: { nome: "Tech Master", cnpj: "", endereco: "", telefone: "", email: "" },
   cliente: { razaoSocial: "=cmd|' /C calc'!A0", cnpj: null, contato: "Ana", email: null, telefone: null },
   itens: [
-    { descricao: '=HYPERLINK("http://x","y")', quantidade: 2, precoUnitarioCentavos: 125000, descontoBps: 0, totalCentavos: 250000 },
-    { descricao: "SSD 1TB", quantidade: 1, precoUnitarioCentavos: 50000, descontoBps: 500, totalCentavos: 47500 },
+    { descricao: '=HYPERLINK("http://x","y")', detalhes: "", quantidade: 2, precoUnitarioCentavos: 125000, descontoBps: 0, totalCentavos: 250000 },
+    { descricao: "SSD 1TB", detalhes: "NVMe M.2, 3500 MB/s", quantidade: 1, precoUnitarioCentavos: 50000, descontoBps: 500, totalCentavos: 47500 },
   ],
   subtotalCentavos: 300000,
   descontoCentavos: 2500,
@@ -42,6 +42,7 @@ describe("buildQuoteXlsx", () => {
     const all: string[] = [];
     ws.eachRow((row) => row.eachCell((c) => all.push(String(c.value))));
     expect(all).toContain("'=HYPERLINK(\"http://x\",\"y\")");
+    expect(all).toContain("SSD 1TB\nNVMe M.2, 3500 MB/s"); // título + especificações na mesma célula
     expect(all).toContain("'=cmd|' /C calc'!A0");
     expect(all.some((v) => /custo|margem/i.test(v))).toBe(false);
 

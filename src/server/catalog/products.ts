@@ -23,6 +23,7 @@ export type ProductView = {
   modelo: string;
   categoria: string;
   descricao: string;
+  fotoVersao: number | null;
   precoVendaCentavos: Cents | null;
   statusCusto: CostStatus;
   custoObtidoEm: Date | null;
@@ -93,6 +94,7 @@ export function toView(db: Db, user: SessionUser, p: ProductRow, now = new Date(
     modelo: p.modelo,
     categoria: p.categoria,
     descricao: p.descricao,
+    fotoVersao: p.fotoVersao,
     precoVendaCentavos: best ? salePriceCents(best.costCents, rule.margemBps, tax) : null,
     statusCusto: best ? "valido" : offers.length > 0 ? "vencido" : "sem_preco",
     custoObtidoEm: null,

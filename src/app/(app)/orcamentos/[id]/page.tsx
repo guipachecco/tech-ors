@@ -14,7 +14,7 @@ import { getDb } from "@/server/db/client";
 import type { SendBlockReason } from "@/server/quotes/errors";
 import { checkSendable, OVERRIDABLE, quoteTotals } from "@/server/quotes/guard";
 import { getItems, getQuote, quoteDrift } from "@/server/quotes/service";
-import { toItemViews } from "@/server/quotes/views";
+import { photoVersionsFor, toItemViews } from "@/server/quotes/views";
 import { NotFoundError } from "@/server/validation";
 import {
   addItemAction, addServiceAction, duplicateAction, outcomeAction, removeItemAction, repriceItemAction,
@@ -27,6 +27,18 @@ const REASON_TEXT: Record<SendBlockReason, string> = {
   custo_vencido: "Há itens com custo vencido. Use “Atualizar preço” na linha do item.",
   margem_abaixo_minimo: "Há itens abaixo da margem mínima (desconto alto demais).",
 };
+
+/** Especificações do item: texto menor; quando longas, ficam recolhidas com "ver tudo". */
+function ItemDetails({ text }: { text: string }) {
+  if (!text) return null;
+  if (text.length <= 140) return <p className="mt-1 text-xs leading-relaxed text-slate-500">{text}</p>;
+  return (
+    <details className="mt-1 text-xs leading-relaxed text-slate-500">
+      <summary className="cursor-pointer">{text.slice(0, 120).trimEnd()}… <span className="text-brand-700 underline">ver tudo</span></summary>
+      <p className="mt-1">{text}</p>
+    </details>
+  );
+}
 
 const pctInput = (bps: number) => (bps / 100).toFixed(2).replace(".", ",");
 const moneyInput = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
@@ -51,7 +63,7 @@ export default async function OrcamentoPage({
   const now = new Date();
   const client = getClient(db, quote.clienteId);
   const rawItems = getItems(db, id);
-  const items = toItemViews(rawItems, user, now);
+  const items = toItemViews(rawItems, user, now, photoVersionsFor(db, rawItems));
   const totals = quoteTotals(quote, rawItems);
   const editable = quote.status === "em_elaboracao";
   const showCost = can(user, "cost:view");
@@ -133,37 +145,55 @@ export default async function OrcamentoPage({
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="border-b border-slate-200"><tr>
-                    <th className={thCls}>Descrição</th><th className={thCls}>Qtd</th><th className={thCls}>Unitário</th>
-                    <th className={thCls}>Desc. %</th>{showCost && <th className={thCls}>Margem</th>}
-                    <th className={`${thCls} text-right`}>Total</th><th className={thCls}></th>
+                    <th className={thCls}>Item</th>
+                    <th className={thCls}>{editable ? "Qtd e desconto" : "Qtd"}</th>
+                    <th className={`${thCls} text-right`}>Unitário</th>
+                    {showCost && <th className={thCls}>Margem</th>}
+                    <th className={`${thCls} text-right`}>Total</th>
+                    <th className={thCls}><span className="sr-only">Ações</span></th>
                   </tr></thead>
                   <tbody className="divide-y divide-slate-100 align-top">
                     {items.map((it) => (
                       <tr key={it.id}>
-                        <td className={tdCls}>
-                          {it.descricao}
-                          {it.custoVencido && <div className="mt-1"><Badge kind="vencido">Custo vencido</Badge></div>}
-                          {it.abaixoDoMinimo && <div className="mt-1"><span className="inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">Abaixo da margem mínima</span></div>}
+                        <td className={`${tdCls} min-w-[16rem]`}>
+                          <div className="flex gap-3">
+                            {it.produtoId !== null && it.fotoVersao !== null && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={`/produtos/${it.produtoId}/foto?v=${it.fotoVersao}`} alt="" loading="lazy" className="h-14 w-[4.5rem] shrink-0 rounded border border-slate-200 bg-white object-contain" />
+                            )}
+                            <div className="min-w-0">
+                              <div className="font-medium text-slate-900">{it.descricao}</div>
+                              <ItemDetails text={it.detalhes} />
+                              {it.custoVencido && <div className="mt-1.5"><Badge kind="vencido">Custo vencido</Badge></div>}
+                              {it.abaixoDoMinimo && <div className="mt-1.5"><span className="inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">Abaixo da margem mínima</span></div>}
+                            </div>
+                          </div>
                         </td>
-                        {editable ? (
-                          <td className={tdCls} colSpan={1}>
-                            <AutoSaveForm action={updateItemAction} className="flex gap-2">
+                        <td className={tdCls}>
+                          {editable ? (
+                            <AutoSaveForm action={updateItemAction} className="grid w-28 gap-1.5">
                               <input type="hidden" name="orcamentoId" value={id} />
                               <input type="hidden" name="itemId" value={it.id} />
-                              <input name="quantidade" type="number" min={1} defaultValue={it.quantidade} className={`${inputCls} !w-20`} aria-label="Quantidade" />
-                              <input name="desconto" defaultValue={pctInput(it.descontoBps)} className={`${inputCls} !w-24`} aria-label="Desconto (%)" inputMode="decimal" />
+                              <label className="text-[11px] text-slate-500">Qtd
+                                <input name="quantidade" type="number" min={1} defaultValue={it.quantidade} className={`${inputCls} mt-0.5`} />
+                              </label>
+                              <label className="text-[11px] text-slate-500">Desc. %
+                                <input name="desconto" defaultValue={pctInput(it.descontoBps)} className={`${inputCls} mt-0.5`} inputMode="decimal" />
+                              </label>
                             </AutoSaveForm>
-                          </td>
-                        ) : (
-                          <td className={tdCls}>{it.quantidade}</td>
-                        )}
-                        <td className={tdCls}>{formatBRL(it.precoUnitarioCentavos)}</td>
-                        <td className={tdCls}>{editable ? <span className="text-xs text-slate-400">← edite ao lado</span> : formatBps(it.descontoBps)}</td>
-                        {showCost && <td className={tdCls}>{it.margemEfetivaBps === undefined ? "—" : it.margemEfetivaBps === null ? "—" : formatBps(it.margemEfetivaBps)}</td>}
-                        <td className={`${tdCls} text-right font-medium`}>{formatBRL(it.totalCentavos)}</td>
-                        <td className={`${tdCls} text-right`}>
+                          ) : (
+                            <>
+                              {it.quantidade}
+                              {it.descontoBps > 0 && <div className="text-xs text-slate-500">desc. {formatBps(it.descontoBps)}</div>}
+                            </>
+                          )}
+                        </td>
+                        <td className={`${tdCls} whitespace-nowrap text-right`}>{formatBRL(it.precoUnitarioCentavos)}</td>
+                        {showCost && <td className={tdCls}>{it.margemEfetivaBps === undefined || it.margemEfetivaBps === null ? "—" : formatBps(it.margemEfetivaBps)}</td>}
+                        <td className={`${tdCls} whitespace-nowrap text-right font-medium`}>{formatBRL(it.totalCentavos)}</td>
+                        <td className={tdCls}>
                           {editable && (
-                            <div className="flex justify-end gap-2">
+                            <div className="flex flex-col items-end gap-2">
                               {it.tipo === "produto" && it.custoVencido && (
                                 <InlineAction action={repriceItemAction} label="Atualizar preço" className={btnSecondary}>
                                   <input type="hidden" name="orcamentoId" value={id} /><input type="hidden" name="itemId" value={it.id} />

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { ActionForm } from "@/components/ActionForm";
+import { ActionForm, InlineAction } from "@/components/ActionForm";
 import { ProductForm } from "@/components/ProductForm";
-import { Alert, Badge, Card, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/components/ui";
+import { Alert, Badge, btnDanger, Card, Field, inputCls, PageHeader, tdCls, TextInput, thCls } from "@/components/ui";
 import { defaultValidUntil } from "@/domain/costs";
 import { formatDate } from "@/domain/format";
 import { formatBps, formatBRL } from "@/domain/money";
@@ -13,7 +13,7 @@ import { getProductRow, getProductView } from "@/server/catalog/products";
 import { listSuppliers } from "@/server/catalog/suppliers";
 import { getDb } from "@/server/db/client";
 import { NotFoundError } from "@/server/validation";
-import { addOfferAction } from "../actions";
+import { addOfferAction, removePhotoAction, uploadPhotoAction } from "../actions";
 
 export default async function ProdutoPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -62,6 +62,31 @@ export default async function ProdutoPage({ params }: { params: Promise<{ id: st
                 {view.statusCusto === "vencido" ? "O custo deste produto venceu. Atualize o preço no fornecedor antes de orçar." : "Este produto ainda não tem custo cadastrado."}
               </Alert></div>
             )}
+          </Card>
+          <Card title="Foto do produto">
+            <div className="flex flex-wrap items-start gap-5">
+              <div className="flex h-40 w-52 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                {view.fotoVersao !== null ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={`/produtos/${id}/foto?v=${view.fotoVersao}`} alt={`Foto de ${row.fabricante} ${row.modelo}`} className="h-full w-full object-contain" />
+                ) : (
+                  <span className="px-4 text-center text-xs text-slate-400">Sem foto</span>
+                )}
+              </div>
+              <div className="min-w-[14rem] flex-1 space-y-3">
+                <ActionForm action={uploadPhotoAction} submitLabel={view.fotoVersao !== null ? "Trocar foto" : "Enviar foto"} className="space-y-3">
+                  <input type="hidden" name="produtoId" value={id} />
+                  <Field label="Foto (JPG, PNG ou WebP)" name="foto" hint="Até 8 MB. A imagem é ajustada (máx. 1000 px, fundo branco) e aparece no orçamento e no PDF.">
+                    <input id="foto" name="foto" type="file" required accept="image/jpeg,image/png,image/webp" className={`${inputCls} file:mr-3 file:rounded file:border-0 file:bg-[var(--btn)] file:px-3 file:py-1 file:text-sm file:font-medium file:text-[#fff]`} />
+                  </Field>
+                </ActionForm>
+                {view.fotoVersao !== null && (
+                  <InlineAction action={removePhotoAction} label="Remover foto" className={btnDanger} confirm="Remover a foto deste produto?">
+                    <input type="hidden" name="produtoId" value={id} />
+                  </InlineAction>
+                )}
+              </div>
+            </div>
           </Card>
           <Card title="Dados do produto"><ProductForm product={row} /></Card>
         </div>

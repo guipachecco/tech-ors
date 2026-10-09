@@ -1,6 +1,7 @@
 import { InvalidMoneyError, parseBRL, parsePercentBps } from "../domain/money";
 import { ForbiddenError } from "./auth/permissions";
 import { ImportError } from "./catalog/import";
+import { PhotoError } from "./catalog/photos";
 import { InvalidTransitionError, NoValidCostError, QuoteLockedError, SendBlockedError } from "./quotes/errors";
 import { NotFoundError, ValidationError } from "./validation";
 
@@ -25,7 +26,7 @@ export async function guard(fn: () => Promise<string | void> | string | void): P
     }
     if (
       e instanceof InvalidMoneyError || e instanceof ForbiddenError || e instanceof NoValidCostError ||
-      e instanceof QuoteLockedError || e instanceof InvalidTransitionError || e instanceof SendBlockedError || e instanceof ImportError ||
+      e instanceof QuoteLockedError || e instanceof InvalidTransitionError || e instanceof SendBlockedError || e instanceof ImportError || e instanceof PhotoError ||
       e instanceof NotFoundError
     ) {
       return { error: e.message };

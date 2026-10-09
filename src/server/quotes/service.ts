@@ -153,10 +153,10 @@ export function addProductItem(db: Db, user: SessionUser, quoteId: number, produ
   assertEditable(q);
   const quantidade = parseInput(qtySchema, qty);
   const { product, values } = snapshotProduct(db, productId, now);
-  const descricao = [product.fabricante, product.modelo, product.descricao && `— ${product.descricao}`].filter(Boolean).join(" ");
+  const descricao = `${product.fabricante} ${product.modelo}`; // título; as especificações vão em `detalhes`
   const item = db
     .insert(orcamentoItens)
-    .values({ orcamentoId: quoteId, tipo: "produto", produtoId: productId, descricao, quantidade, ...values })
+    .values({ orcamentoId: quoteId, tipo: "produto", produtoId: productId, descricao, detalhes: product.descricao, quantidade, ...values })
     .returning()
     .get();
   recordAudit(db, { userId: user.id, acao: "orcamento.item_adicionar", entidade: "orcamento", entidadeId: quoteId, depois: { itemId: item.id, produtoId: productId, quantidade } });
