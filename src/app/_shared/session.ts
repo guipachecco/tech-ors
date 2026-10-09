@@ -10,7 +10,7 @@ export const SESSION_COOKIE = "sid";
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  return validateSession(getDb(), token);
+  return await validateSession(getDb(), token);
 }
 
 export async function requireUser(): Promise<SessionUser> {

@@ -4,8 +4,7 @@ import { formatDate } from "@/domain/format";
 import { formatBRL } from "@/domain/money";
 import { requireUser } from "@/app/_shared/session";
 import { getDb } from "@/infra/db/client";
-import { quoteTotals } from "@/modules/quotes/guard";
-import { expireOverdueQuotes, getItems, listQuotes } from "@/modules/quotes/service";
+import { expireOverdueQuotes, listQuotes } from "@/modules/quotes/service";
 
 const FILTERS = [
   ["", "Todos"], ["em_elaboracao", "Em elaboração"], ["enviado", "Enviados"],
@@ -16,8 +15,8 @@ export default async function OrcamentosPage({ searchParams }: { searchParams: P
   await requireUser();
   const { status = "" } = await searchParams;
   const db = getDb();
-  expireOverdueQuotes(db);
-  const rows = listQuotes(db).filter((q) => !status || q.status === status);
+  await expireOverdueQuotes(db);
+  const rows = (await listQuotes(db)).filter((q) => !status || q.status === status);
   return (
     <>
       <PageHeader title="Orçamentos" actions={<Link href="/orcamentos/novo" className={btnPrimary}>Novo orçamento</Link>} />
@@ -39,7 +38,7 @@ export default async function OrcamentosPage({ searchParams }: { searchParams: P
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {rows.map((q) => {
-                  const total = quoteTotals({ freteCentavos: q.freteCentavos }, getItems(db, q.id)).totalCentavos;
+                  const total = q.totalCentavos;
                   return (
                     <tr key={q.id} className="hover:bg-slate-50">
                       <td className={tdCls}><Link href={`/orcamentos/${q.id}`} className="font-medium text-brand-700 hover:underline">{q.numero}</Link></td>

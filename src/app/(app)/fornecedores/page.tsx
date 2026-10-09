@@ -9,7 +9,7 @@ import { saveSupplierAction } from "./actions";
 export default async function FornecedoresPage({ searchParams }: { searchParams: Promise<{ edit?: string }> }) {
   await requireUser();
   const { edit } = await searchParams;
-  const suppliers = listSuppliers(getDb());
+  const suppliers = await listSuppliers(getDb());
   const editing = edit ? suppliers.find((s) => s.id === Number(edit)) : undefined;
   return (
     <>

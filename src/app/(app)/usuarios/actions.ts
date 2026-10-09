@@ -24,11 +24,11 @@ export async function createUserAction(_prev: ActionState, fd: FormData): Promis
 
 export async function toggleAccessAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const admin = await requireCan("user:manage");
-  return guard(() => {
+  return guard(async () => {
     const field = str(fd, "campo");
     const value = str(fd, "valor") === "1";
     if (field !== "ativo" && field !== "podeVerCusto") return;
-    updateUserAccess(getDb(), admin, intField(fd, "id"), { [field]: value });
+    await updateUserAccess(getDb(), admin, intField(fd, "id"), { [field]: value });
     revalidatePath("/usuarios");
   });
 }
@@ -43,8 +43,8 @@ export async function resetPasswordAction(_prev: ActionState, fd: FormData): Pro
 
 export async function resetMfaAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const admin = await requireCan("user:manage");
-  return guard(() => {
-    resetUserMfa(getDb(), admin, intField(fd, "id"));
+  return guard(async () => {
+    await resetUserMfa(getDb(), admin, intField(fd, "id"));
     revalidatePath("/usuarios");
     return "2FA redefinido. O usuário configura um novo autenticador no próximo login.";
   });

@@ -6,9 +6,9 @@ import { ValidationError } from "@/infra/validation";
 import { usuarios } from "@/infra/db/schema";
 import { createTestDb } from "../../helpers/testDb";
 
-function setup() {
-  const db = createTestDb();
-  const u = db.insert(usuarios).values({ nome: "A", email: "a@x.com", senhaHash: "h", perfil: "administrador" }).returning().get();
+async function setup() {
+  const db = await createTestDb();
+  const u = await db.insert(usuarios).values({ nome: "A", email: "a@x.com", senhaHash: "h", perfil: "administrador" }).returning().get();
   const user: SessionUser = { id: u.id, nome: u.nome, email: u.email, perfil: u.perfil, podeVerCusto: true };
   return { db, user };
 }
@@ -22,16 +22,16 @@ describe("cnpj", () => {
 });
 
 describe("clients", () => {
-  it("rejects invalid CNPJ and e-mail", () => {
-    const { db, user } = setup();
-    expect(() => saveClient(db, user, { razaoSocial: "X", cnpj: "11.222.333/0001-82" })).toThrow(ValidationError);
-    expect(() => saveClient(db, user, { razaoSocial: "X", email: "sem-arroba" })).toThrow(ValidationError);
+  it("rejects invalid CNPJ and e-mail", async () => {
+    const { db, user } = await setup();
+    await expect(saveClient(db, user, { razaoSocial: "X", cnpj: "11.222.333/0001-82" })).rejects.toThrow(ValidationError);
+    await expect(saveClient(db, user, { razaoSocial: "X", email: "sem-arroba" })).rejects.toThrow(ValidationError);
   });
-  it("stores digits only and searches ignoring accents", () => {
-    const { db, user } = setup();
-    const c = saveClient(db, user, { razaoSocial: "Indústria São João Ltda", cnpj: "11.222.333/0001-81" });
+  it("stores digits only and searches ignoring accents", async () => {
+    const { db, user } = await setup();
+    const c = await saveClient(db, user, { razaoSocial: "Indústria São João Ltda", cnpj: "11.222.333/0001-81" });
     expect(c.cnpj).toBe("11222333000181");
-    expect(searchClients(db, "industria sao").map((x) => x.id)).toEqual([c.id]);
-    expect(searchClients(db, "inexistente")).toHaveLength(0);
+    expect((await searchClients(db, "industria sao")).map((x) => x.id)).toEqual([c.id]);
+    expect(await searchClients(db, "inexistente")).toHaveLength(0);
   });
 });

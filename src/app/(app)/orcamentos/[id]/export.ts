@@ -16,9 +16,9 @@ export async function prepareExport(
   if (!Number.isInteger(id)) return new Response("Não encontrado", { status: 404 });
   const db = getDb();
   try {
-    const quote = getQuote(db, id);
-    const view = loadClientView(db, id);
-    recordAudit(db, { userId: user.id, acao: `orcamento.exportar_${kind}`, entidade: "orcamento", entidadeId: id });
+    const quote = await getQuote(db, id);
+    const view = await loadClientView(db, id);
+    await recordAudit(db, { userId: user.id, acao: `orcamento.exportar_${kind}`, entidade: "orcamento", entidadeId: id });
     return { view, filename: `orcamento-${quote.numero}.${kind}` };
   } catch (e) {
     if (e instanceof NotFoundError) return new Response("Não encontrado", { status: 404 });

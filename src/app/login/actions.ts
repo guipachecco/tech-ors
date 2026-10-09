@@ -31,24 +31,24 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
     const h = await headers();
     const ip = (h.get("x-forwarded-for") ?? "local").split(",")[0].trim();
     const keys = [`email:${email}`, `ip:${ip}`];
+    const db = getDb();
     for (const k of keys) {
-      const c = checkLoginAllowed(k);
+      const c = await checkLoginAllowed(db, k);
       if (!c.allowed) {
         throw new ValidationError({ _: `Muitas tentativas. Tente novamente em ${Math.ceil(c.retryAfterSec / 60)} min.` });
       }
     }
 
-    const db = getDb();
-    const user = db.select().from(usuarios).where(eq(usuarios.email, email)).get();
+    const user = await db.select().from(usuarios).where(eq(usuarios.email, email)).get();
     const ok = await verifyPassword(user?.senhaHash ?? DUMMY_HASH, senha);
     if (!user || !user.ativo || !ok) {
-      keys.forEach((k) => recordLoginFailure(k));
-      recordAudit(db, { userId: user?.id ?? null, acao: "login.falha", entidade: "usuario", entidadeId: user?.id, depois: { email } });
+      for (const k of keys) await recordLoginFailure(db, k);
+      await recordAudit(db, { userId: user?.id ?? null, acao: "login.falha", entidade: "usuario", entidadeId: user?.id, depois: { email } });
       throw new ValidationError({ _: GENERIC });
     }
 
-    keys.forEach((k) => clearLoginFailures(k));
-    const { token, expiresAt } = createChallenge(db, user.id);
+    for (const k of keys) await clearLoginFailures(db, k);
+    const { token, expiresAt } = await createChallenge(db, user.id);
     (await cookies()).set(MFA_COOKIE, token, {
       httpOnly: true,
       sameSite: "strict",
@@ -57,7 +57,7 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
       maxAge: CHALLENGE_MINUTES * 60,
       expires: expiresAt,
     });
-    recordAudit(db, { userId: user.id, acao: "login.senha_ok", entidade: "usuario", entidadeId: user.id });
+    await recordAudit(db, { userId: user.id, acao: "login.senha_ok", entidade: "usuario", entidadeId: user.id });
     next = true;
   });
   if (next) redirect("/login/2fa");

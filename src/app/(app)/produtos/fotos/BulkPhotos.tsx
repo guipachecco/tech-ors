@@ -5,7 +5,7 @@ import { Alert, Badge, btnPrimary, btnSecondary, tdCls, thCls } from "@/ui/primi
 import type { PhotoMatch } from "@/modules/catalog/photos/match";
 import { previewPhotoNamesAction, uploadPhotoByNameAction } from "./actions";
 
-const MAX_BYTES = 8 * 1024 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024;
 const IMAGE = /\.(jpe?g|png|webp)$/i;
 
 type Status = "pendente" | "enviando" | "ok" | "erro";
@@ -19,7 +19,7 @@ const VIA: Record<PhotoMatch["via"], { label: string; kind: string }> = {
   nenhum: { label: "Sem correspondência", kind: "vencido" },
 };
 
-export function BulkPhotos() {
+export async function BulkPhotos() {
   const [items, setItems] = useState<Item[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [replace, setReplace] = useState(false);
@@ -38,7 +38,7 @@ export function BulkPhotos() {
     const files: File[] = [];
     for (const f of Array.from(list)) {
       if (!IMAGE.test(f.name)) { ignored.push(`${f.name}: não é JPG, PNG ou WebP`); continue; }
-      if (f.size > MAX_BYTES) { ignored.push(`${f.name}: passa de 8 MB`); continue; }
+      if (f.size > MAX_BYTES) { ignored.push(`${f.name}: passa de 4 MB`); continue; }
       const key = f.name.toLowerCase();
       if (seen.has(key)) { ignored.push(`${f.name}: nome repetido`); continue; }
       seen.add(key);

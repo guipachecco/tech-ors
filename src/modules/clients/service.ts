@@ -27,7 +27,7 @@ export const clientSchema = z.object({
   telefone: z.string().trim().max(40).optional(),
 });
 
-export function saveClient(db: Db, user: SessionUser, input: z.input<typeof clientSchema> & { id?: number }): Client {
+export async function saveClient(db: Db, user: SessionUser, input: z.input<typeof clientSchema> & { id?: number }): Promise<Client> {
   const data = parseInput(clientSchema, input);
   const values = {
     razaoSocial: data.razaoSocial,
@@ -38,24 +38,24 @@ export function saveClient(db: Db, user: SessionUser, input: z.input<typeof clie
     busca: normalizeSearch([data.razaoSocial, data.cnpj ?? "", data.contato ?? ""].join(" ")),
   };
   if (input.id) {
-    const before = db.select().from(clientes).where(eq(clientes.id, input.id)).get();
+    const before = await db.select().from(clientes).where(eq(clientes.id, input.id)).get();
     if (!before) throw new NotFoundError("Cliente");
-    const after = db.update(clientes).set(values).where(eq(clientes.id, input.id)).returning().get();
-    recordAudit(db, { userId: user.id, acao: "cliente.alterar", entidade: "cliente", entidadeId: after.id, antes: before, depois: after });
+    const after = await db.update(clientes).set(values).where(eq(clientes.id, input.id)).returning().get();
+    await recordAudit(db, { userId: user.id, acao: "cliente.alterar", entidade: "cliente", entidadeId: after.id, antes: before, depois: after });
     return after;
   }
-  const created = db.insert(clientes).values(values).returning().get();
-  recordAudit(db, { userId: user.id, acao: "cliente.criar", entidade: "cliente", entidadeId: created.id, depois: created });
+  const created = await db.insert(clientes).values(values).returning().get();
+  await recordAudit(db, { userId: user.id, acao: "cliente.criar", entidade: "cliente", entidadeId: created.id, depois: created });
   return created;
 }
 
-export function searchClients(db: Db, query: string, limit = 50): Client[] {
+export async function searchClients(db: Db, query: string, limit = 50): Promise<Client[]> {
   const conditions = searchTokens(query).map((t) => like(clientes.busca, `%${t}%`));
-  return db.select().from(clientes).where(and(...conditions)).orderBy(clientes.razaoSocial).limit(limit).all();
+  return await db.select().from(clientes).where(and(...conditions)).orderBy(clientes.razaoSocial).limit(limit).all();
 }
 
-export function getClient(db: Db, id: number): Client {
-  const c = db.select().from(clientes).where(eq(clientes.id, id)).get();
+export async function getClient(db: Db, id: number): Promise<Client> {
+  const c = await db.select().from(clientes).where(eq(clientes.id, id)).get();
   if (!c) throw new NotFoundError("Cliente");
   return c;
 }

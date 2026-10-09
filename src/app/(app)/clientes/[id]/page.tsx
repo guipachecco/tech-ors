@@ -14,7 +14,7 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
   if (!Number.isInteger(id)) notFound();
   let client;
   try {
-    client = getClient(getDb(), id);
+    client = await getClient(getDb(), id);
   } catch (e) {
     if (e instanceof NotFoundError) notFound();
     throw e;

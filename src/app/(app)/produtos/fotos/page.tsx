@@ -21,7 +21,7 @@ export default async function FotosEmLotePage() {
           </ul>
           <p className="mt-4 text-xs text-slate-500">
             Maiúsculas, acentos e símbolos (<code>_ - .</code>) não importam. Nomes que servem para mais de 100 produtos (como “dell.jpg”) são recusados.
-            JPG, PNG ou WebP, até 8 MB cada. Você confere a lista antes de enviar.
+            JPG, PNG ou WebP, até 4 MB cada. Você confere a lista antes de enviar.
           </p>
         </Card>
         <Card className="lg:order-1 lg:col-span-2">

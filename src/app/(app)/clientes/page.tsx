@@ -8,7 +8,7 @@ import { getDb } from "@/infra/db/client";
 export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await requireUser();
   const { q = "" } = await searchParams;
-  const clients = searchClients(getDb(), q, 200);
+  const clients = await searchClients(getDb(), q, 200);
   return (
     <>
       <PageHeader title="Clientes" actions={<Link href="/clientes/novo" className={btnPrimary}>Novo cliente</Link>} />

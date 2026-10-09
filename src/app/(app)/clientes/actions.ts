@@ -11,8 +11,8 @@ export async function saveClientAction(_prev: ActionState, fd: FormData): Promis
   const user = await requireUser();
   const idRaw = str(fd, "id");
   let target: string | null = null;
-  const result = await guard(() => {
-    const saved = saveClient(getDb(), user, {
+  const result = await guard(async () => {
+    const saved = await saveClient(getDb(), user, {
       id: idRaw ? Number(idRaw) : undefined,
       razaoSocial: str(fd, "razaoSocial"),
       cnpj: optStr(fd, "cnpj"),

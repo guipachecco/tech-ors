@@ -34,20 +34,20 @@ type Indexed = Row & { words: Set<string> };
 type Index = { rows: Indexed[]; skuToRows: Map<string, Indexed[]>; codeToProducts: Map<string, Set<number>> };
 
 /** Lê o catálogo uma vez (centenas de produtos) para casar muitos arquivos de uma vez. */
-function loadIndex(db: Db): Index {
-  const rows: Indexed[] = db
+async function loadIndex(db: Db): Promise<Index> {
+  const found = await db
     .select({ id: produtos.id, sku: produtos.sku, fabricante: produtos.fabricante, modelo: produtos.modelo, busca: produtos.busca, fotoVersao: produtos.fotoVersao })
     .from(produtos)
     .where(eq(produtos.ativo, true))
-    .all()
-    .map((p) => ({ ...p, words: new Set(p.busca.split(" ")) }));
+    .all();
+  const rows: Indexed[] = found.map((p) => ({ ...p, words: new Set(p.busca.split(" ")) }));
   const skuToRows = new Map<string, Indexed[]>();
   for (const p of rows) {
     const k = normalizeSearch(p.sku);
     skuToRows.set(k, [...(skuToRows.get(k) ?? []), p]);
   }
   const codeToProducts = new Map<string, Set<number>>();
-  for (const o of db.select({ produtoId: ofertasCusto.produtoId, cod: ofertasCusto.skuFornecedor }).from(ofertasCusto).all()) {
+  for (const o of await db.select({ produtoId: ofertasCusto.produtoId, cod: ofertasCusto.skuFornecedor }).from(ofertasCusto).all()) {
     if (!o.cod) continue;
     const k = normalizeSearch(o.cod);
     if (!codeToProducts.has(k)) codeToProducts.set(k, new Set());
@@ -80,12 +80,12 @@ function matchWith(index: Index, fileName: string): PhotoMatch {
  * 1) SKU interno igual; 2) código do fornecedor igual; 3) todas as palavras do nome aparecem no produto
  * (o nome do modelo vale para todas as variações dele). Para no primeiro critério que achar algo.
  */
-export function matchPhotoName(db: Db, fileName: string): PhotoMatch {
-  return matchWith(loadIndex(db), fileName);
+export async function matchPhotoName(db: Db, fileName: string): Promise<PhotoMatch> {
+  return matchWith(await loadIndex(db), fileName);
 }
 
-export function matchPhotoNames(db: Db, fileNames: string[]): PhotoMatch[] {
-  const index = loadIndex(db);
+export async function matchPhotoNames(db: Db, fileNames: string[]): Promise<PhotoMatch[]> {
+  const index = await loadIndex(db);
   return fileNames.map((n) => matchWith(index, n));
 }
 
@@ -95,17 +95,17 @@ export type PhotoBatchResult = { encontrados: number; salvos: number; ignorados:
 export async function applyPhotoByName(
   db: Db, user: SessionUser, fileName: string, input: Buffer, opts: { replace: boolean }, now = new Date(),
 ): Promise<PhotoBatchResult> {
-  const match = matchPhotoName(db, fileName);
+  const match = await matchPhotoName(db, fileName);
   if (match.via === "nenhum") throw new PhotoError("Nenhum produto corresponde a este nome de arquivo.");
   if (match.via === "amplo") throw new PhotoError(`O nome corresponde a ${match.total} produtos (limite ${MAX_FAMILY_MATCHES}). Use o código ou um nome mais específico.`);
 
   const jpeg = await normalizePhoto(input); // valida e trata antes de gravar qualquer coisa
   const targets = match.produtos.filter((p) => opts.replace || !p.temFoto);
-  db.transaction((tx) => {
-    for (const p of targets) storeProductPhoto(tx as unknown as Db, p.id, jpeg, now);
+  await db.transaction(async (tx) => {
+    for (const p of targets) await storeProductPhoto(tx as unknown as Db, p.id, jpeg, now);
   });
   if (targets.length > 0) {
-    recordAudit(db, { userId: user.id, acao: "produto.foto_lote", entidade: "produto", depois: { arquivo: fileName.slice(0, 120), via: match.via, produtos: targets.length } });
+    await recordAudit(db, { userId: user.id, acao: "produto.foto_lote", entidade: "produto", depois: { arquivo: fileName.slice(0, 120), via: match.via, produtos: targets.length } });
   }
   return { encontrados: match.total, salvos: targets.length, ignorados: match.total - targets.length };
 }

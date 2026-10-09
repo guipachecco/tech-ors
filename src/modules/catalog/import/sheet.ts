@@ -2,7 +2,7 @@
 import ExcelJS from "exceljs";
 import { cellToText, type CellValue } from "@/domain/import";
 
-export const MAX_FILE_BYTES = 5 * 1024 * 1024;
+export const MAX_FILE_BYTES = 4 * 1024 * 1024; // a Vercel recusa requisições acima de ~4,5 MB
 export const MAX_ROWS = 2000;
 export const MAX_COLS = 40;
 const MAX_UNCOMPRESSED_BYTES = 100 * 1024 * 1024;

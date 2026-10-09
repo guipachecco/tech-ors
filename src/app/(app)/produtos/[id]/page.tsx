@@ -23,8 +23,8 @@ export default async function ProdutoPage({ params }: { params: Promise<{ id: st
   const db = getDb();
   let row, view;
   try {
-    row = getProductRow(db, id);
-    view = getProductView(db, user, id);
+    row = await getProductRow(db, id);
+    view = await getProductView(db, user, id);
   } catch (e) {
     if (e instanceof NotFoundError) notFound();
     throw e;
@@ -32,9 +32,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ id: st
 
   const canWrite = can(user, "cost:write");
   const canView = can(user, "cost:view");
-  const offers = canView ? listOffersForProduct(db, user, id) : [];
-  const suppliers = listSuppliers(db);
-  const rule = resolveRule(db, row);
+  const offers = canView ? await listOffersForProduct(db, user, id) : [];
+  const suppliers = await listSuppliers(db);
+  const rule = await resolveRule(db, row);
   const defaultUntil = defaultValidUntil(new Date(), rule.validadeCustoDias).toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
 
   return (
@@ -76,7 +76,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ id: st
               <div className="min-w-[14rem] flex-1 space-y-3">
                 <ActionForm action={uploadPhotoAction} submitLabel={view.fotoVersao !== null ? "Trocar foto" : "Enviar foto"} className="space-y-3">
                   <input type="hidden" name="produtoId" value={id} />
-                  <Field label="Foto (JPG, PNG ou WebP)" name="foto" hint="Até 8 MB. A imagem é ajustada (máx. 1000 px, fundo branco) e aparece no orçamento e no PDF.">
+                  <Field label="Foto (JPG, PNG ou WebP)" name="foto" hint="Até 4 MB. A imagem é ajustada (máx. 1000 px, fundo branco) e aparece no orçamento e no PDF.">
                     <input id="foto" name="foto" type="file" required accept="image/jpeg,image/png,image/webp" className={`${inputCls} file:mr-3 file:rounded file:border-0 file:bg-[var(--btn)] file:px-3 file:py-1 file:text-sm file:font-medium file:text-[#fff]`} />
                   </Field>
                 </ActionForm>

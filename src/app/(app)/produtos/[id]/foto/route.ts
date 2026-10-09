@@ -11,7 +11,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   if (!(await getCurrentUser())) return new Response("Não autenticado", { status: 401 });
   const id = Number((await ctx.params).id);
   if (!Number.isInteger(id)) return new Response("Não encontrado", { status: 404 });
-  const photo = getProductPhoto(getDb(), id);
+  const photo = await getProductPhoto(getDb(), id);
   if (!photo) return new Response("Não encontrado", { status: 404 });
 
   const etag = `"${createHash("sha1").update(photo.data).digest("hex")}"`;

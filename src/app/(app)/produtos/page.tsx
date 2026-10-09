@@ -9,7 +9,7 @@ import { getDb } from "@/infra/db/client";
 export default async function ProdutosPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const user = await requireUser();
   const { q = "" } = await searchParams;
-  const products = searchProducts(getDb(), user, q, 200);
+  const products = await searchProducts(getDb(), user, q, 200);
   return (
     <>
       <PageHeader title="Produtos" subtitle="Catálogo com custo e validade" actions={<><Link href="/produtos/fotos" className={btnSecondary}>Fotos em lote</Link><Link href="/produtos/importar" className={btnSecondary}>Importar planilha</Link><Link href="/produtos/novo" className={btnPrimary}>Novo produto</Link></>} />

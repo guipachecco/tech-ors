@@ -19,3 +19,4 @@ exemplos/
 
 # configuração de produção (segredos)
 .env.production
+.env.turso

@@ -12,8 +12,8 @@ const pct = (bps: number) => (bps / 100).toFixed(2).replace(".", ",");
 export default async function ConfiguracoesPage() {
   const user = await requireCan("settings:manage");
   const db = getDb();
-  const s = getSettings(db);
-  const rules = listMarginRules(db, user);
+  const s = await getSettings(db);
+  const rules = await listMarginRules(db, user);
   return (
     <>
       <PageHeader title="Regras e configurações" subtitle="Margens, impostos, validade dos custos e dados da empresa" />

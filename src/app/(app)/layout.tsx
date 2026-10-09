@@ -7,6 +7,8 @@ import { requireUser } from "@/app/_shared/session";
 import { can } from "@/modules/auth/permissions";
 
 export const dynamic = "force-dynamic";
+// Importações, fotos e PDFs podem demorar mais que o padrão de uma função na Vercel.
+export const maxDuration = 60;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();

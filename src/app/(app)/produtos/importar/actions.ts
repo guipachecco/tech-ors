@@ -32,13 +32,13 @@ export async function uploadImportAction(_prev: ActionState, fd: FormData): Prom
 export async function saveMappingAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requireCan("cost:write");
   const importId = intField(fd, "importId");
-  return guard(() => {
+  return guard(async () => {
     const mapping: Mapping = {};
     for (const f of FIELDS) {
       const h = optStr(fd, `map_${f}`);
       if (h) mapping[f as Field] = h;
     }
-    saveImportMapping(getDb(), user, importId, {
+    await saveImportMapping(getDb(), user, importId, {
       mapping,
       defaults: { categoria: optStr(fd, "padrao_categoria"), fabricante: optStr(fd, "padrao_fabricante") },
     });
@@ -52,9 +52,9 @@ export async function applyImportAction(_prev: ActionState, fd: FormData): Promi
   const user = await requireCan("cost:write");
   const importId = intField(fd, "importId");
   let done = false;
-  const result = await guard(() => {
+  const result = await guard(async () => {
     const rows = fd.getAll("linhas").map((v) => Number(v)).filter((n) => Number.isInteger(n));
-    applyImport(getDb(), user, importId, rows);
+    await applyImport(getDb(), user, importId, rows);
     revalidatePath("/produtos");
     done = true;
   });

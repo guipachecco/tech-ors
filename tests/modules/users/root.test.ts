@@ -9,68 +9,68 @@ import { createUser, listUsers, resetPassword, updateUserAccess } from "@/module
 import { ValidationError } from "@/infra/validation";
 import { createTestDb } from "../../helpers/testDb";
 
-function setup() {
-  const db = createTestDb();
-  const mk = (nome: string, perfil: "root" | "administrador" | "vendedor") => {
-    const u = db.insert(usuarios).values({ nome, email: `${nome}@x.com`, senhaHash: "h", perfil, podeVerCusto: perfil !== "vendedor" }).returning().get();
+async function setup() {
+  const db = await createTestDb();
+  const mk = async (nome: string, perfil: "root" | "administrador" | "vendedor") => {
+    const u = await db.insert(usuarios).values({ nome, email: `${nome}@x.com`, senhaHash: "h", perfil, podeVerCusto: perfil !== "vendedor" }).returning().get();
     const s: SessionUser = { id: u.id, nome, email: u.email, perfil, podeVerCusto: u.podeVerCusto };
     return s;
   };
-  return { db, root: mk("root", "root"), admin: mk("adm", "administrador"), admin2: mk("adm2", "administrador"), seller: mk("ven", "vendedor") };
+  return { db, root: await mk("root", "root"), admin: await mk("adm", "administrador"), admin2: await mk("adm2", "administrador"), seller: await mk("ven", "vendedor") };
 }
 
 const NEW = { nome: "Novo", email: "novo@x.com", senha: "senha-bem-forte", podeVerCusto: false };
 
 describe("creating users", () => {
   it("only root creates administrators; administrators create sellers", async () => {
-    const { db, root, admin } = setup();
+    const { db, root, admin } = await setup();
     await expect(createUser(db, admin, { ...NEW, perfil: "administrador" })).rejects.toThrow(ForbiddenError);
     expect((await createUser(db, admin, { ...NEW, perfil: "vendedor" })).perfil).toBe("vendedor");
     expect((await createUser(db, root, { ...NEW, email: "outro@x.com", perfil: "administrador" })).perfil).toBe("administrador");
   });
 
   it("nobody creates a root through the application (only the server command does)", async () => {
-    const { db, root } = setup();
+    const { db, root } = await setup();
     await expect(createUser(db, root, { ...NEW, perfil: "root" as never })).rejects.toThrow(ValidationError);
   });
 });
 
 describe("protecting the root account", () => {
   it("an administrator cannot deactivate, change access, reset password or reset 2FA of root", async () => {
-    const { db, root, admin } = setup();
-    expect(() => updateUserAccess(db, admin, root.id, { ativo: false })).toThrow(ForbiddenError);
-    expect(() => updateUserAccess(db, admin, root.id, { podeVerCusto: false })).toThrow(ForbiddenError);
+    const { db, root, admin } = await setup();
+    await expect(updateUserAccess(db, admin, root.id, { ativo: false })).rejects.toThrow(ForbiddenError);
+    await expect(updateUserAccess(db, admin, root.id, { podeVerCusto: false })).rejects.toThrow(ForbiddenError);
     await expect(resetPassword(db, admin, root.id, "outra-senha-forte")).rejects.toThrow(ForbiddenError);
-    expect(() => resetUserMfa(db, admin, root.id)).toThrow(ForbiddenError);
-    const row = db.select().from(usuarios).where(eq(usuarios.id, root.id)).get()!;
+    await expect(resetUserMfa(db, admin, root.id)).rejects.toThrow(ForbiddenError);
+    const row = (await db.select().from(usuarios).where(eq(usuarios.id, root.id)).get())!;
     expect(row.ativo).toBe(true);
     expect(row.senhaHash).toBe("h");
   });
 
-  it("not even root can be deactivated through the application", () => {
-    const { db, root, admin2 } = setup();
-    expect(() => updateUserAccess(db, root, root.id, { ativo: false })).toThrow(ValidationError);
-    expect(db.select().from(usuarios).where(eq(usuarios.id, admin2.id)).get()!.ativo).toBe(true);
+  it("not even root can be deactivated through the application", async () => {
+    const { db, root, admin2 } = await setup();
+    await expect(updateUserAccess(db, root, root.id, { ativo: false })).rejects.toThrow(ValidationError);
+    expect((await db.select().from(usuarios).where(eq(usuarios.id, admin2.id)).get())!.ativo).toBe(true);
   });
 
   it("root manages administrators and sellers; peers administrators still manage each other", async () => {
-    const { db, root, admin, admin2, seller } = setup();
-    updateUserAccess(db, root, admin.id, { ativo: false });
-    expect(db.select().from(usuarios).where(eq(usuarios.id, admin.id)).get()!.ativo).toBe(false);
-    updateUserAccess(db, admin2, seller.id, { podeVerCusto: true });
+    const { db, root, admin, admin2, seller } = await setup();
+    await updateUserAccess(db, root, admin.id, { ativo: false });
+    expect((await db.select().from(usuarios).where(eq(usuarios.id, admin.id)).get())!.ativo).toBe(false);
+    await updateUserAccess(db, admin2, seller.id, { podeVerCusto: true });
     await resetPassword(db, root, admin2.id, "outra-senha-forte");
   });
 
   it("deactivating a user revokes sessions, and root can reset its own password", async () => {
-    const { db, root, seller } = setup();
+    const { db, root, seller } = await setup();
     const { token } = await createSession(db, seller.id);
-    updateUserAccess(db, root, seller.id, { ativo: false });
+    await updateUserAccess(db, root, seller.id, { ativo: false });
     expect(await validateSession(db, token)).toBeNull();
     await expect(resetPassword(db, root, root.id, "nova-senha-forte")).resolves.toBeUndefined();
   });
 
-  it("lists root with its profile for the admin screen", () => {
-    const { db, admin } = setup();
-    expect(listUsers(db, admin).map((u) => u.perfil)).toContain("root");
+  it("lists root with its profile for the admin screen", async () => {
+    const { db, admin } = await setup();
+    expect((await listUsers(db, admin)).map((u) => u.perfil)).toContain("root");
   });
 });

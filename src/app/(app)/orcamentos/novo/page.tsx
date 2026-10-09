@@ -8,7 +8,7 @@ import { createQuoteAction } from "../actions";
 
 export default async function NovoOrcamentoPage() {
   await requireUser();
-  const clients = searchClients(getDb(), "", 1000);
+  const clients = await searchClients(getDb(), "", 1000);
   return (
     <>
       <PageHeader title="Novo orçamento" subtitle="Escolha o cliente para começar" />

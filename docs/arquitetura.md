@@ -5,12 +5,13 @@ Monólito modular em camadas. **As dependências só descem**; um teste automát
 ```
 src/
   domain/    regras puras (dinheiro, preço, validade, status, leitura de linhas de planilha). Não depende de nada.
-  infra/     o que sustenta o sistema: config, banco (cliente + tabelas), auditoria, backup, erros de validação.
+  infra/     o que sustenta o sistema: config, banco (cliente libSQL + tabelas), auditoria, backup, erros de validação.
   modules/   o negócio, um módulo por assunto (veja abaixo). Sem Next.js nem React (exceto o PDF).
   ui/        peças visuais genéricas (botões, campos, formulário de ação, tema, logo).
   app/       telas e rotas do Next.js. Finas: leem a sessão, validam a entrada e chamam os módulos.
     _shared/ ligação com o Next: sessão/cookies (session.ts) e ajuda para formulários (actions.ts).
   proxy.ts   porta de entrada (login obrigatório, proteção contra requisições de outro site).
+  instrumentation.ts   ao iniciar o servidor, migra o banco local (arquivo). Banco na nuvem migra no deploy.
 ```
 
 ## Quem pode usar quem
@@ -43,13 +44,16 @@ Dentro de `catalog` há uma subpasta por assunto (`products/`, `suppliers/`, `co
 - **Dinheiro:** sempre em centavos inteiros; percentuais em pontos-base (1% = 100).
 - **Imports:** entre pastas diferentes use o apelido `@/` (ex.: `@/modules/quotes/service`); `./` só dentro da mesma pasta.
 - **Tabelas:** `infra/db/schema/` (um arquivo por assunto + `index.ts`). Migrações em `drizzle/`.
+- **Banco assíncrono (libSQL):** todo acesso é `await` (`.get()`, `.all()`, `.run()`, `db.transaction(async …)`). O endereço vem de `DATABASE_URL`/`TURSO_DATABASE_URL` (`libsql://…`, nuvem) ou de um arquivo local (`file:…`); o código é o mesmo nos dois.
+- **Cada consulta pode ser uma viagem de rede.** Por isso listas não fazem uma consulta por item: carregue tudo de uma vez (`inArray`, `loadPricingContext`, `getProductPhotos`) e grave em lote (`createProducts`, `addCostOffers`, `recordAuditMany`). Importações e telas de lista são os casos sensíveis.
+- **Sem estado em memória do servidor:** na Vercel cada requisição pode cair em outra instância; o limite de tentativas de login/2FA fica na tabela `limites_tentativa` (atômico).
 
 ## Outras pastas
 
 ```
 scripts/
   admin/   comandos de servidor: criar admin/root, promover root, redefinir 2FA
-  ops/     operação: backup
+  ops/     operação: backup, restauração e migração do banco
   dev/     desenvolvimento: dados de exemplo e servidor de demonstração
 tests/     espelha src/ (domain, infra, modules) + architecture/ (regras de camadas)
 drizzle/   migrações do banco (geradas e versionadas)

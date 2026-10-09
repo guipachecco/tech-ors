@@ -8,48 +8,48 @@ import { createUser, listUsers, resetPassword, updateUserAccess } from "@/module
 import { ValidationError } from "@/infra/validation";
 import { createTestDb } from "../../helpers/testDb";
 
-function setup() {
-  const db = createTestDb();
-  const a = db.insert(usuarios).values({ nome: "Adm", email: "adm@x.com", senhaHash: "h", perfil: "administrador", podeVerCusto: true }).returning().get();
+async function setup() {
+  const db = await createTestDb();
+  const a = await db.insert(usuarios).values({ nome: "Adm", email: "adm@x.com", senhaHash: "h", perfil: "administrador", podeVerCusto: true }).returning().get();
   const admin: SessionUser = { id: a.id, nome: a.nome, email: a.email, perfil: a.perfil, podeVerCusto: true };
   return { db, admin };
 }
 
 describe("users", () => {
   it("creates users, never exposing the password hash, and rejects duplicates and weak passwords", async () => {
-    const { db, admin } = setup();
+    const { db, admin } = await setup();
     const u = await createUser(db, admin, { nome: "Ven", email: "VEN@x.com", senha: "senha-bem-forte", perfil: "vendedor", podeVerCusto: false });
     expect(u.email).toBe("ven@x.com");
     expect("senhaHash" in u).toBe(false);
-    expect(listUsers(db, admin).every((x) => !("senhaHash" in x))).toBe(true);
+    expect((await listUsers(db, admin)).every((x) => !("senhaHash" in x))).toBe(true);
     await expect(createUser(db, admin, { nome: "X", email: "ven@x.com", senha: "senha-bem-forte", perfil: "vendedor", podeVerCusto: false })).rejects.toThrow(ValidationError);
     await expect(createUser(db, admin, { nome: "X", email: "y@x.com", senha: "curta", perfil: "vendedor", podeVerCusto: false })).rejects.toThrow(ValidationError);
   });
 
   it("only administrators manage users", async () => {
-    const { db, admin } = setup();
+    const { db, admin } = await setup();
     const u = await createUser(db, admin, { nome: "Ven", email: "ven@x.com", senha: "senha-bem-forte", perfil: "vendedor", podeVerCusto: true });
     const seller: SessionUser = { id: u.id, nome: u.nome, email: u.email, perfil: "vendedor", podeVerCusto: true };
-    expect(() => listUsers(db, seller)).toThrow(ForbiddenError);
+    await expect(listUsers(db, seller)).rejects.toThrow(ForbiddenError);
     await expect(createUser(db, seller, { nome: "Z", email: "z@x.com", senha: "senha-bem-forte", perfil: "vendedor", podeVerCusto: false })).rejects.toThrow(ForbiddenError);
   });
 
   it("deactivating revokes sessions; admins cannot deactivate themselves", async () => {
-    const { db, admin } = setup();
+    const { db, admin } = await setup();
     const u = await createUser(db, admin, { nome: "Ven", email: "ven@x.com", senha: "senha-bem-forte", perfil: "vendedor", podeVerCusto: false });
     const { token } = await createSession(db, u.id);
-    updateUserAccess(db, admin, u.id, { ativo: false });
+    await updateUserAccess(db, admin, u.id, { ativo: false });
     expect(await validateSession(db, token)).toBeNull();
-    expect(() => updateUserAccess(db, admin, admin.id, { ativo: false })).toThrow(ValidationError);
+    await expect(updateUserAccess(db, admin, admin.id, { ativo: false })).rejects.toThrow(ValidationError);
   });
 
   it("resets the password and revokes sessions", async () => {
-    const { db, admin } = setup();
+    const { db, admin } = await setup();
     const u = await createUser(db, admin, { nome: "Ven", email: "ven@x.com", senha: "senha-bem-forte", perfil: "vendedor", podeVerCusto: false });
     const { token } = await createSession(db, u.id);
     await resetPassword(db, admin, u.id, "outra-senha-forte");
     expect(await validateSession(db, token)).toBeNull();
-    const row = db.select().from(usuarios).all().find((x) => x.id === u.id)!;
+    const row = (await db.select().from(usuarios).all()).find((x) => x.id === u.id)!;
     expect(await verifyPassword(row.senhaHash, "outra-senha-forte")).toBe(true);
   });
 });

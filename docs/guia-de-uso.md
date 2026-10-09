@@ -20,7 +20,7 @@ O acesso tem **duas etapas**: e-mail e senha, depois um código de 6 dígitos do
 
 Quando o fornecedor manda os preços em .xlsx: **Produtos → Importar planilha**.
 
-1. Escolha o **fornecedor** e envie o arquivo (até 5 MB e 2.000 linhas). Nada é gravado ainda.
+1. Escolha o **fornecedor** e envie o arquivo (até 4 MB e 2.000 linhas). Nada é gravado ainda.
 2. Confira as **colunas**: o sistema sugere (código, descrição, marca, preço, link…); ajuste se precisar. Só **código** e **custo** são obrigatórios. Para produtos novos informe a **categoria** e o **fabricante** (coluna ou valor padrão). A escolha fica salva para o fornecedor: na próxima planilha dele já vem pronta.
 3. Veja a **pré-visualização**: *Novo* (cadastra o produto), *Atualiza* (custo diferente, mostra o anterior), *Reconfirma* (mesmo custo — renova a validade) e *Erro* (não é importado, com o motivo). Desmarque o que não quiser e confirme. Tudo é gravado de uma vez.
 
@@ -28,7 +28,7 @@ O produto é reconhecido pelo **código do fornecedor** (de importações anteri
 
 ## Foto e descrição do produto
 
-- Na página do produto há o cartão **Foto do produto**: envie um JPG, PNG ou WebP (até 8 MB). O sistema ajusta a imagem (máx. 1000 px, fundo branco, sem dados da câmera) e ela aparece na lista de produtos, na tela do orçamento e no **PDF** do cliente. (A planilha XLSX não leva imagens.)
+- Na página do produto há o cartão **Foto do produto**: envie um JPG, PNG ou WebP (até 4 MB). O sistema ajusta a imagem (máx. 1000 px, fundo branco, sem dados da câmera) e ela aparece na lista de produtos, na tela do orçamento e no **PDF** do cliente. (A planilha XLSX não leva imagens.)
 - **Muitas fotos de uma vez:** **Produtos → Fotos em lote**. Escolha várias fotos (ou uma pasta inteira); o **nome do arquivo** diz de qual produto é: o SKU ou o código do fornecedor (`pe_r260_18399_bcc_1.jpg` → só esse produto) ou o nome do modelo (`poweredge-t160.jpg` → todas as variações do T160 com a mesma foto). Maiúsculas, acentos e símbolos não importam. O sistema mostra a lista do que corresponde a quê antes de enviar; por padrão não troca fotos que já existem. Nomes amplos demais (mais de 100 produtos, como `dell.jpg`) são recusados.
 - O campo **Descrição** do produto vira as **especificações** do item no orçamento: o título do item é fabricante + modelo, e as especificações aparecem logo abaixo, em texto menor. Quando são longas, ficam recolhidas na tela ("ver tudo") e completas no PDF.
 

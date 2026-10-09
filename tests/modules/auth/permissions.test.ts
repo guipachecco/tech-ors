@@ -35,9 +35,9 @@ describe("can", () => {
 });
 
 describe("recordAudit", () => {
-  it("stores before/after as JSON and strips sensitive keys", () => {
-    const db = createTestDb();
-    recordAudit(db, {
+  it("stores before/after as JSON and strips sensitive keys", async () => {
+    const db = await createTestDb();
+    await recordAudit(db, {
       userId: null,
       acao: "teste",
       entidade: "usuario",
@@ -45,7 +45,7 @@ describe("recordAudit", () => {
       antes: { nome: "A", senhaHash: "segredo" },
       depois: { nome: "B", nested: { token: "t", ok: 1 } },
     });
-    const row = db.select().from(auditoria).get()!;
+    const row = (await db.select().from(auditoria).get())!;
     expect(row.antes).toBe(JSON.stringify({ nome: "A" }));
     expect(row.depois).toBe(JSON.stringify({ nome: "B", nested: { ok: 1 } }));
     expect(`${row.antes}${row.depois}`).not.toContain("segredo");

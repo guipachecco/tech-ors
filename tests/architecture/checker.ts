@@ -31,7 +31,8 @@ const FORBIDDEN_PACKAGES: Record<string, RegExp> = {
 
 const SPEC = /(?:^|[\s;])(?:import|export)\s[^"']*?from\s*["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']\s*\)|^import\s+["']([^"']+)["']/gm;
 
-export const layerOf = (file: string): string => (file === "src/proxy.ts" ? "app" : file.split("/")[1]);
+// proxy.ts e instrumentation.ts ficam na raiz de src/ e são pontos de entrada do Next: camada "app".
+export const layerOf = (file: string): string => (file === "src/proxy.ts" || file === "src/instrumentation.ts" ? "app" : file.split("/")[1]);
 export const moduleOf = (file: string): string | null => /^src\/modules\/([^/]+)/.exec(file)?.[1] ?? null;
 
 export function resolveInternal(from: string, spec: string): string | null {

@@ -3,14 +3,14 @@ import { describe, expect, it } from "vitest";
 import { ForbiddenError } from "@/modules/auth/permissions";
 import type { SessionUser } from "@/modules/auth/sessions";
 import { listOffersForProduct } from "@/modules/catalog/costs/service";
-import { getProductView, saveProduct, searchProducts } from "@/modules/catalog/products/service";
+import { createProducts, getProductView, saveProduct, searchProducts } from "@/modules/catalog/products/service";
 import { addCostOffer } from "@/modules/catalog/costs/service";
 import { saveSupplier } from "@/modules/catalog/suppliers/service";
 import {
   analyzeImport, applyImport, assertSafeXlsx, createImport, ImportError, MAX_ROWS, readSheet, saveImportMapping,
 } from "@/modules/catalog/import";
 import { auditoria, ofertasCusto, produtos, usuarios } from "@/infra/db/schema";
-import { NotFoundError } from "@/infra/validation";
+import { NotFoundError, ValidationError } from "@/infra/validation";
 import { createTestDb } from "../../helpers/testDb";
 
 const NOW = new Date("2026-10-09T12:00:00Z");
@@ -23,16 +23,16 @@ async function xlsx(rows: unknown[][], opts: { sheetName?: string } = {}): Promi
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
-function setup() {
-  const db = createTestDb();
-  const mk = (nome: string, perfil: "administrador" | "vendedor", podeVerCusto: boolean): SessionUser => {
-    const u = db.insert(usuarios).values({ nome, email: `${nome}@x.com`, senhaHash: "h", perfil, podeVerCusto }).returning().get();
+async function setup() {
+  const db = await createTestDb();
+  const mk = async (nome: string, perfil: "administrador" | "vendedor", podeVerCusto: boolean): Promise<SessionUser> => {
+    const u = await db.insert(usuarios).values({ nome, email: `${nome}@x.com`, senhaHash: "h", perfil, podeVerCusto }).returning().get();
     return { id: u.id, nome, email: u.email, perfil, podeVerCusto };
   };
-  const admin = mk("adm", "administrador", true);
-  const seller = mk("ven", "vendedor", false);
-  const buyer = mk("comp", "vendedor", true); // vendedor com permissão de custo
-  const supplier = saveSupplier(db, admin, { nome: "Distribuidora Alfa" });
+  const admin = await mk("adm", "administrador", true);
+  const seller = await mk("ven", "vendedor", false);
+  const buyer = await mk("comp", "vendedor", true); // vendedor com permissão de custo
+  const supplier = await saveSupplier(db, admin, { nome: "Distribuidora Alfa" });
   return { db, admin, seller, buyer, supplier };
 }
 
@@ -79,18 +79,18 @@ describe("readSheet", () => {
 
 describe("createImport and mapping", () => {
   it("requires permission to change costs and an existing supplier", async () => {
-    const { db, seller, admin, supplier } = setup();
+    const { db, seller, admin, supplier } = await setup();
     const buffer = await xlsx([HEADER, ["A1", "Item", "X", "Y", 10, null]]);
     await expect(createImport(db, seller, { fornecedorId: supplier.id, fileName: "a.xlsx", buffer }, NOW)).rejects.toThrow(ForbiddenError);
     await expect(createImport(db, admin, { fornecedorId: 9999, fileName: "a.xlsx", buffer }, NOW)).rejects.toThrow(ImportError);
   });
 
   it("suggests the mapping, remembers the supplier's mapping and reuses it", async () => {
-    const { db, admin, supplier } = setup();
+    const { db, admin, supplier } = await setup();
     const first = await createImport(db, admin, { fornecedorId: supplier.id, fileName: "a.xlsx", buffer: await xlsx([HEADER, ["A1", "Item", "X", "Y", 10, null]]) }, NOW);
     expect(JSON.parse(first.mapeamentoJson!)).toMatchObject({ codigo: "Código", custo: "Preço Unitário (R$)", fabricante: "Marca" });
 
-    saveImportMapping(db, admin, first.id, {
+    await saveImportMapping(db, admin, first.id, {
       mapping: { codigo: "Código", custo: "Preço Unitário (R$)", descricao: "Descrição" },
       defaults: { categoria: "Switch", fabricante: "Genérico" },
     });
@@ -100,29 +100,29 @@ describe("createImport and mapping", () => {
   });
 
   it("validates the mapping", async () => {
-    const { db, admin, supplier } = setup();
+    const { db, admin, supplier } = await setup();
     const rec = await createImport(db, admin, { fornecedorId: supplier.id, fileName: "a.xlsx", buffer: await xlsx([HEADER, ["A1", "Item", "X", "Y", 10, null]]) }, NOW);
-    expect(() => saveImportMapping(db, admin, rec.id, { mapping: { codigo: "Inexistente" }, defaults: {} })).toThrow(ImportError);
-    expect(() => saveImportMapping(db, admin, rec.id, { mapping: { codigo: "Código", modelo: "Código" }, defaults: {} })).toThrow(/mais de um campo/);
+    await expect(saveImportMapping(db, admin, rec.id, { mapping: { codigo: "Inexistente" }, defaults: {} })).rejects.toThrow(ImportError);
+    await expect(saveImportMapping(db, admin, rec.id, { mapping: { codigo: "Código", modelo: "Código" }, defaults: {} })).rejects.toThrow(/mais de um campo/);
   });
 
   it("hides an import from other non-admin users", async () => {
-    const { db, admin, buyer, supplier } = setup();
+    const { db, admin, buyer, supplier } = await setup();
     const rec = await createImport(db, buyer, { fornecedorId: supplier.id, fileName: "a.xlsx", buffer: await xlsx([HEADER, ["A1", "Item", "X", "Y", 10, null]]) }, NOW);
     const other: SessionUser = { ...buyer, id: 9999 };
-    expect(() => analyzeImport(db, other, rec.id)).toThrow(NotFoundError);
-    expect(() => analyzeImport(db, admin, rec.id)).not.toThrow(); // administrador enxerga
+    await expect(analyzeImport(db, other, rec.id)).rejects.toThrow(NotFoundError);
+    await analyzeImport(db, admin, rec.id); // administrador enxerga
   });
 });
 
 describe("analyzeImport", () => {
   it("classifies rows as new, updated, reconfirmed or error", async () => {
-    const { db, admin, supplier } = setup();
+    const { db, admin, supplier } = await setup();
     // Produto existente, já com custo deste fornecedor (código do fornecedor "ALFA-1")
-    const p1 = saveProduct(db, admin, { sku: "SW-24", fabricante: "TP-Link", modelo: "Switch 24p", categoria: "Switch" });
-    addCostOffer(db, admin, { produtoId: p1.id, fornecedorId: supplier.id, skuFornecedor: "ALFA-1", custoCentavos: 100000 }, NOW);
+    const p1 = await saveProduct(db, admin, { sku: "SW-24", fabricante: "TP-Link", modelo: "Switch 24p", categoria: "Switch" });
+    await addCostOffer(db, admin, { produtoId: p1.id, fornecedorId: supplier.id, skuFornecedor: "ALFA-1", custoCentavos: 100000 }, NOW);
     // Produto existente cujo SKU interno é igual ao código que o fornecedor manda
-    saveProduct(db, admin, { sku: "SSD-1T", fabricante: "Kingston", modelo: "NV2 1TB", categoria: "SSD" });
+    await saveProduct(db, admin, { sku: "SSD-1T", fabricante: "Kingston", modelo: "NV2 1TB", categoria: "SSD" });
 
     const buffer = await xlsx([
       HEADER,
@@ -134,7 +134,7 @@ describe("analyzeImport", () => {
       ["ALFA-1", "Switch 24p de novo", "TP-Link", "Switch", 1100, null], // repetido → erro
     ]);
     const rec = await createImport(db, admin, { fornecedorId: supplier.id, fileName: "a.xlsx", buffer }, NOW);
-    const a = analyzeImport(db, admin, rec.id);
+    const a = await analyzeImport(db, admin, rec.id);
     expect(a.rows.map((r) => r.status)).toEqual(["reconfirma", "novo", "atualiza", "erro", "erro", "erro"]);
     expect(a.summary).toEqual({ novo: 1, atualiza: 1, reconfirma: 1, erro: 3 });
     expect(a.rows[0].custoAnteriorCentavos).toBe(100000);
@@ -143,33 +143,33 @@ describe("analyzeImport", () => {
   });
 
   it("blocks new products without manufacturer or category, unless defaults are given", async () => {
-    const { db, admin, supplier } = setup();
+    const { db, admin, supplier } = await setup();
     const rec = await createImport(db, admin, { fornecedorId: supplier.id, fileName: "a.xlsx", buffer: await xlsx([["Código", "Descrição", "Preço"], ["N1", "Cabo de rede", 5]]) }, NOW);
-    expect(analyzeImport(db, admin, rec.id).rows[0]).toMatchObject({ status: "erro" });
-    saveImportMapping(db, admin, rec.id, {
+    expect((await analyzeImport(db, admin, rec.id)).rows[0]).toMatchObject({ status: "erro" });
+    await saveImportMapping(db, admin, rec.id, {
       mapping: { codigo: "Código", descricao: "Descrição", custo: "Preço" },
       defaults: { categoria: "Cabos", fabricante: "Genérico" },
     });
-    const row = analyzeImport(db, admin, rec.id).rows[0];
+    const row = (await analyzeImport(db, admin, rec.id)).rows[0];
     expect(row.status).toBe("novo");
     expect(row.novoProduto).toMatchObject({ sku: "N1", fabricante: "Genérico", categoria: "Cabos", modelo: "Cabo de rede" });
   });
 
   it("asks for the mapping when code or cost columns are not recognized", async () => {
-    const { db, admin, supplier } = setup();
+    const { db, admin, supplier } = await setup();
     const rec = await createImport(db, admin, { fornecedorId: supplier.id, fileName: "a.xlsx", buffer: await xlsx([["X", "Y"], ["a", "b"]]) }, NOW);
-    const a = analyzeImport(db, admin, rec.id);
+    const a = await analyzeImport(db, admin, rec.id);
     expect(a.missingRequired).toEqual(["codigo", "custo"]);
     expect(a.rows).toEqual([]);
-    expect(() => applyImport(db, admin, rec.id, [2], NOW)).toThrow(/Associe as colunas/);
+    await expect(applyImport(db, admin, rec.id, [2], NOW)).rejects.toThrow(/Associe as colunas/);
   });
 });
 
 describe("applyImport", () => {
   async function prepared() {
-    const s = setup();
-    const p = saveProduct(s.db, s.admin, { sku: "SW-24", fabricante: "TP-Link", modelo: "Switch 24p", categoria: "Switch" });
-    addCostOffer(s.db, s.admin, { produtoId: p.id, fornecedorId: s.supplier.id, skuFornecedor: "ALFA-1", custoCentavos: 100000 }, new Date(NOW.getTime() - 20 * DAY));
+    const s = await setup();
+    const p = await saveProduct(s.db, s.admin, { sku: "SW-24", fabricante: "TP-Link", modelo: "Switch 24p", categoria: "Switch" });
+    await addCostOffer(s.db, s.admin, { produtoId: p.id, fornecedorId: s.supplier.id, skuFornecedor: "ALFA-1", custoCentavos: 100000 }, new Date(NOW.getTime() - 20 * DAY));
     const buffer = await xlsx([
       [...HEADER, "Validade"],
       ["ALFA-1", "Switch 24p", "TP-Link", "Switch", 1234.56, "https://alfa.example.com/sw24", null],
@@ -182,48 +182,90 @@ describe("applyImport", () => {
 
   it("creates products and cost history atomically, honoring the validity column and the category rule", async () => {
     const { db, admin, rec, produtoId } = await prepared();
-    const result = applyImport(db, admin, rec.id, [2, 3, 4], NOW);
+    const result = await applyImport(db, admin, rec.id, [2, 3, 4], NOW);
     expect(result).toEqual({ novos: 1, atualizados: 1, reconfirmados: 0, ignorados: 1 });
 
-    const offers = listOffersForProduct(db, admin, produtoId);
+    const offers = await listOffersForProduct(db, admin, produtoId);
     expect(offers).toHaveLength(2); // histórico preservado
     expect(offers[0]).toMatchObject({ custoCentavos: 123456, urlProduto: "https://alfa.example.com/sw24", skuFornecedor: "ALFA-1" });
     expect(offers[0].validoAte.getTime()).toBe(NOW.getTime() + 7 * DAY); // validade padrão (7 dias)
 
-    const mem = searchProducts(db, admin, "ALFA-9 memória", 10, NOW);
+    const mem = await searchProducts(db, admin, "ALFA-9 memória", 10, NOW);
     expect(mem).toHaveLength(1);
     expect(mem[0].custo?.custoCentavos).toBe(21000);
-    expect(db.select().from(ofertasCusto).all().find((o) => o.skuFornecedor === "ALFA-9")!.validoAte.getTime()).toBe(NOW.getTime() + 3 * DAY); // coluna Validade
-    expect(getProductView(db, admin, produtoId, NOW).statusCusto).toBe("valido");
-    expect(db.select().from(auditoria).all().some((a) => a.acao === "importacao.aplicar")).toBe(true);
+    expect((await db.select().from(ofertasCusto).all()).find((o) => o.skuFornecedor === "ALFA-9")!.validoAte.getTime()).toBe(NOW.getTime() + 3 * DAY); // coluna Validade
+    expect((await getProductView(db, admin, produtoId, NOW)).statusCusto).toBe("valido");
+    expect((await db.select().from(auditoria).all()).some((a) => a.acao === "importacao.aplicar")).toBe(true);
   });
 
   it("imports only the selected rows and ignores error rows even if selected", async () => {
     const { db, admin, rec } = await prepared();
-    const result = applyImport(db, admin, rec.id, [3, 4], NOW); // linha 4 tem erro
+    const result = await applyImport(db, admin, rec.id, [3, 4], NOW); // linha 4 tem erro
     expect(result).toMatchObject({ novos: 1, atualizados: 0 });
-    expect(db.select().from(produtos).all().filter((p) => p.sku === "ALFA-9")).toHaveLength(1);
-    expect(db.select().from(ofertasCusto).all()).toHaveLength(2); // 1 antiga + 1 nova
+    expect((await db.select().from(produtos).all()).filter((p) => p.sku === "ALFA-9")).toHaveLength(1);
+    expect(await db.select().from(ofertasCusto).all()).toHaveLength(2); // 1 antiga + 1 nova
   });
 
   it("cannot be applied twice, after expiry, or with nothing selected; and needs permission", async () => {
     const { db, admin, seller, rec } = await prepared();
-    expect(() => applyImport(db, admin, rec.id, [], NOW)).toThrow(/Nenhuma linha/);
-    expect(() => applyImport(db, seller, rec.id, [2], NOW)).toThrow(ForbiddenError);
-    expect(() => applyImport(db, admin, rec.id, [2], new Date(NOW.getTime() + 25 * 3600_000))).toThrow(/expirou/);
-    applyImport(db, admin, rec.id, [2], NOW);
-    expect(() => applyImport(db, admin, rec.id, [2], NOW)).toThrow(/já foi concluída/);
-    expect(db.select().from(ofertasCusto).all()).toHaveLength(2);
+    await expect(applyImport(db, admin, rec.id, [], NOW)).rejects.toThrow(/Nenhuma linha/);
+    await expect(applyImport(db, seller, rec.id, [2], NOW)).rejects.toThrow(ForbiddenError);
+    await expect(applyImport(db, admin, rec.id, [2], new Date(NOW.getTime() + 25 * 3600_000))).rejects.toThrow(/expirou/);
+    await applyImport(db, admin, rec.id, [2], NOW);
+    await expect(applyImport(db, admin, rec.id, [2], NOW)).rejects.toThrow(/já foi concluída/);
+    expect(await db.select().from(ofertasCusto).all()).toHaveLength(2);
   });
 
   it("stores hostile cell text as plain text", async () => {
-    const { db, admin, supplier } = setup();
+    const { db, admin, supplier } = await setup();
     const buffer = await xlsx([HEADER, ["H1", "=HYPERLINK(\"http://evil\")", "<img src=x onerror=alert(1)>", "Teste", 10, "javascript:alert(1)"]]);
     const rec = await createImport(db, admin, { fornecedorId: supplier.id, fileName: "../../etc/passwd\u0000.xlsx", buffer }, NOW);
     expect(rec.nomeArquivo).not.toContain("\u0000");
-    applyImport(db, admin, rec.id, [2], NOW);
-    const p = db.select().from(produtos).all().find((x) => x.sku === "H1")!;
+    await applyImport(db, admin, rec.id, [2], NOW);
+    const p = (await db.select().from(produtos).all()).find((x) => x.sku === "H1")!;
     expect(p.fabricante).toBe("<img src=x onerror=alert(1)>");
-    expect(db.select().from(ofertasCusto).all()[0].urlProduto).toBeNull(); // link javascript: descartado
+    expect((await db.select().from(ofertasCusto).all())[0].urlProduto).toBeNull(); // link javascript: descartado
+  });
+
+  it("applies hundreds of rows in batches, linking every offer to the right product", async () => {
+    const { db, admin, supplier } = await setup();
+    const existing = 230;
+    const fresh = 270; // atravessa os lotes de gravação (100 linhas)
+    for (let i = 0; i < existing; i++) await saveProduct(db, admin, { sku: `E${i}`, fabricante: "Marca", modelo: `Existente ${i}`, categoria: "Cat" }, NOW);
+    const rows = [
+      ...Array.from({ length: existing }, (_, i) => [`E${i}`, "x", "Marca", "Cat", 10 + i, null]),
+      ...Array.from({ length: fresh }, (_, i) => [`N${i}`, `Novo ${i}`, "Marca", "Cat", 500 + i, null]),
+    ];
+    const rec = await createImport(db, admin, { fornecedorId: supplier.id, fileName: "grande.xlsx", buffer: await xlsx([HEADER, ...rows]) }, NOW);
+    const result = await applyImport(db, admin, rec.id, rows.map((_, i) => i + 2), NOW);
+    expect(result).toEqual({ novos: fresh, atualizados: existing, reconfirmados: 0, ignorados: 0 });
+
+    const bySku = new Map((await db.select().from(produtos).all()).map((p) => [p.sku, p.id]));
+    const offers = await db.select().from(ofertasCusto).all();
+    expect(offers).toHaveLength(existing + fresh);
+    for (const o of offers) expect(o.produtoId).toBe(bySku.get(o.skuFornecedor!)); // oferta ligada ao produto certo
+    expect(offers.find((o) => o.skuFornecedor === "N269")!.custoCentavos).toBe((500 + 269) * 100);
+    const acoes = (await db.select().from(auditoria).all()).map((a) => a.acao);
+    expect(acoes.filter((a) => a === "produto.criar")).toHaveLength(existing + fresh); // inclui os criados no preparo
+    expect(acoes.filter((a) => a === "oferta_custo.criar")).toHaveLength(existing + fresh);
+  }, 60_000);
+
+  it("treats a code repeated in the sheet as an error row and imports the rest", async () => {
+    const { db, admin, supplier } = await setup();
+    const buffer = await xlsx([HEADER, ["D1", "Um", "Marca", "Cat", 10, null], ["D2", "Dois", "Marca", "Cat", 20, null], ["D1", "Um de novo", "Marca", "Cat", 30, null]]);
+    const rec = await createImport(db, admin, { fornecedorId: supplier.id, fileName: "dup.xlsx", buffer }, NOW);
+    expect(await applyImport(db, admin, rec.id, [2, 3, 4], NOW)).toMatchObject({ novos: 2, ignorados: 1 });
+    expect(await db.select().from(produtos).all()).toHaveLength(2);
+  });
+
+  it("createProducts is all-or-nothing: repeated or existing SKUs store nothing", async () => {
+    const { db, admin } = await setup();
+    const mk = (sku: string) => ({ sku, fabricante: "M", modelo: sku, categoria: "C" });
+    await expect(createProducts(db, admin, [mk("A"), mk("B"), mk("A")], NOW)).rejects.toThrow(ValidationError);
+    expect(await db.select().from(produtos).all()).toHaveLength(0);
+    await saveProduct(db, admin, mk("X"), NOW);
+    await expect(createProducts(db, admin, [mk("Y"), mk("X")], NOW)).rejects.toThrow(/Já existe/);
+    expect(await db.select().from(produtos).all()).toHaveLength(1);
+    expect((await createProducts(db, admin, [mk("P"), mk("Q")], NOW)).map((p) => p.sku)).toEqual(["P", "Q"]);
   });
 });

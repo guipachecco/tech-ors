@@ -17,9 +17,12 @@ const securityHeaders = [
 const config: NextConfig = {
   // Só afeta o modo de desenvolvimento: permite abrir o servidor de teste por 127.0.0.1 além de localhost.
   allowedDevOrigins: ["127.0.0.1"],
-  // Planilhas (até 5 MB) e fotos de produtos (até 8 MB) chegam como upload; os limites exatos são conferidos no servidor.
-  experimental: { serverActions: { bodySizeLimit: "10mb" } },
-  serverExternalPackages: ["better-sqlite3", "@node-rs/argon2", "@react-pdf/renderer", "exceljs", "sharp"],
+  // Planilhas e fotos (até 4 MB cada) chegam como upload; os limites exatos são conferidos no servidor.
+  // A Vercel recusa corpos de requisição acima de ~4,5 MB, então 4 MB é o teto prático.
+  experimental: { serverActions: { bodySizeLimit: "5mb" } },
+  serverExternalPackages: ["@libsql/client", "libsql", "@node-rs/argon2", "@react-pdf/renderer", "exceljs", "sharp"],
+  // O logo do PDF é lido do disco em tempo de execução (caminho montado em código): a Vercel só o inclui se for avisada.
+  outputFileTracingIncludes: { "/**/pdf/route": ["./assets/logo.png"] },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

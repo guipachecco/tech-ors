@@ -11,8 +11,8 @@ export async function saveSupplierAction(_prev: ActionState, fd: FormData): Prom
   const user = await requireUser();
   const idRaw = str(fd, "id");
   let done = false;
-  const result = await guard(() => {
-    saveSupplier(getDb(), user, {
+  const result = await guard(async () => {
+    await saveSupplier(getDb(), user, {
       id: idRaw ? Number(idRaw) : undefined,
       nome: str(fd, "nome"),
       site: optStr(fd, "site"),

@@ -19,13 +19,13 @@ const hashToken = (token: string) => createHash("sha256").update(token).digest("
 export async function createSession(db: Db, userId: number, now = new Date()) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(now.getTime() + SESSION_HOURS * 3600_000);
-  db.insert(sessoes).values({ tokenHash: hashToken(token), usuarioId: userId, expiraEm: expiresAt }).run();
+  await db.insert(sessoes).values({ tokenHash: hashToken(token), usuarioId: userId, expiraEm: expiresAt }).run();
   return { token, expiresAt };
 }
 
 export async function validateSession(db: Db, token: string, now = new Date()): Promise<SessionUser | null> {
   if (!token) return null;
-  const row = db
+  const row = await db
     .select({
       id: usuarios.id,
       nome: usuarios.nome,
@@ -41,5 +41,5 @@ export async function validateSession(db: Db, token: string, now = new Date()): 
 }
 
 export async function revokeSession(db: Db, token: string): Promise<void> {
-  db.delete(sessoes).where(eq(sessoes.tokenHash, hashToken(token))).run();
+  await db.delete(sessoes).where(eq(sessoes.tokenHash, hashToken(token))).run();
 }

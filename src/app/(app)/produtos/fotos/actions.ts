@@ -14,7 +14,7 @@ export async function previewPhotoNamesAction(names: string[]): Promise<PhotoMat
   await requireUser();
   if (!Array.isArray(names) || names.length > MAX_NAMES) return [];
   const clean = names.map((n) => String(n).slice(0, 255));
-  return matchPhotoNames(getDb(), clean);
+  return await matchPhotoNames(getDb(), clean);
 }
 
 export type UploadResult = ({ ok: true } & PhotoBatchResult) | { ok: false; error: string };

@@ -3,6 +3,7 @@ import { prepareExport } from "../export";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const prepared = await prepareExport((await ctx.params).id, "pdf");

@@ -20,18 +20,18 @@ async function mfaToken(): Promise<string> {
 /** Passo 2 (quem já tem autenticador): confere o código e só então cria a sessão. */
 export async function verifyCodeAction(_prev: MfaState, fd: FormData): Promise<MfaState> {
   const token = await mfaToken();
-  const result = verifyLoginCode(getDb(), totpKey(), token, codeOf(fd));
+  const result = await verifyLoginCode(getDb(), totpKey(), token, codeOf(fd));
   if (!result.ok) return { error: result.error };
   (await cookies()).delete({ name: MFA_COOKIE, path: "/login" });
   await startSession(result.userId);
-  recordAudit(getDb(), { userId: result.userId, acao: "login.ok", entidade: "usuario", entidadeId: result.userId, depois: { recuperacao: result.usedRecovery } });
+  await recordAudit(getDb(), { userId: result.userId, acao: "login.ok", entidade: "usuario", entidadeId: result.userId, depois: { recuperacao: result.usedRecovery } });
   redirect("/orcamentos");
 }
 
 /** Passo 2 (primeiro acesso): confirma o autenticador, cria a sessão e leva aos códigos de recuperação (mostrados uma única vez). */
 export async function enrollAction(_prev: MfaState, fd: FormData): Promise<MfaState> {
   const token = await mfaToken();
-  const result = completeEnrollment(getDb(), totpKey(), token, codeOf(fd));
+  const result = await completeEnrollment(getDb(), totpKey(), token, codeOf(fd));
   if (!result.ok) return { error: result.error };
   const jar = await cookies();
   jar.delete({ name: MFA_COOKIE, path: "/login" });
@@ -43,7 +43,7 @@ export async function enrollAction(_prev: MfaState, fd: FormData): Promise<MfaSt
     maxAge: 600,
   });
   await startSession(result.userId);
-  recordAudit(getDb(), { userId: result.userId, acao: "login.ok", entidade: "usuario", entidadeId: result.userId, depois: { primeiroAcesso2fa: true } });
+  await recordAudit(getDb(), { userId: result.userId, acao: "login.ok", entidade: "usuario", entidadeId: result.userId, depois: { primeiroAcesso2fa: true } });
   redirect("/login/2fa/codigos");
 }
 
@@ -56,7 +56,7 @@ export async function finishMfaAction(): Promise<void> {
 export async function cancelMfaAction(): Promise<void> {
   const jar = await cookies();
   const token = jar.get(MFA_COOKIE)?.value;
-  if (token) discardChallenge(getDb(), token);
+  if (token) await discardChallenge(getDb(), token);
   jar.delete({ name: MFA_COOKIE, path: "/login" });
   redirect("/login");
 }

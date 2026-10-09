@@ -27,21 +27,21 @@ export const supplierSchema = z.object({
   observacoes: z.string().trim().max(1000).optional(),
 });
 
-export function listSuppliers(db: Db): Supplier[] {
-  return db.select().from(fornecedores).where(eq(fornecedores.ativo, true)).orderBy(fornecedores.nome).all();
+export async function listSuppliers(db: Db): Promise<Supplier[]> {
+  return await db.select().from(fornecedores).where(eq(fornecedores.ativo, true)).orderBy(fornecedores.nome).all();
 }
 
-export function saveSupplier(db: Db, user: SessionUser, input: z.input<typeof supplierSchema> & { id?: number }): Supplier {
+export async function saveSupplier(db: Db, user: SessionUser, input: z.input<typeof supplierSchema> & { id?: number }): Promise<Supplier> {
   const data = parseInput(supplierSchema, input);
   const values = { nome: data.nome, site: data.site || null, observacoes: data.observacoes || null };
   if (input.id) {
-    const before = db.select().from(fornecedores).where(eq(fornecedores.id, input.id)).get();
+    const before = await db.select().from(fornecedores).where(eq(fornecedores.id, input.id)).get();
     if (!before) throw new NotFoundError("Fornecedor");
-    const after = db.update(fornecedores).set(values).where(eq(fornecedores.id, input.id)).returning().get();
-    recordAudit(db, { userId: user.id, acao: "fornecedor.alterar", entidade: "fornecedor", entidadeId: after.id, antes: before, depois: after });
+    const after = await db.update(fornecedores).set(values).where(eq(fornecedores.id, input.id)).returning().get();
+    await recordAudit(db, { userId: user.id, acao: "fornecedor.alterar", entidade: "fornecedor", entidadeId: after.id, antes: before, depois: after });
     return after;
   }
-  const created = db.insert(fornecedores).values(values).returning().get();
-  recordAudit(db, { userId: user.id, acao: "fornecedor.criar", entidade: "fornecedor", entidadeId: created.id, depois: created });
+  const created = await db.insert(fornecedores).values(values).returning().get();
+  await recordAudit(db, { userId: user.id, acao: "fornecedor.criar", entidade: "fornecedor", entidadeId: created.id, depois: created });
   return created;
 }

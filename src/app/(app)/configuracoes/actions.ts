@@ -9,8 +9,8 @@ import { getDb } from "@/infra/db/client";
 
 export async function saveSettingsAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requireCan("settings:manage");
-  return guard(() => {
-    saveSettings(getDb(), user, {
+  return guard(async () => {
+    await saveSettings(getDb(), user, {
       empresaNome: str(fd, "empresaNome"),
       empresaCnpj: str(fd, "empresaCnpj"),
       empresaEndereco: str(fd, "empresaEndereco"),
@@ -33,9 +33,9 @@ export async function saveSettingsAction(_prev: ActionState, fd: FormData): Prom
 
 export async function saveRuleAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requireCan("margin:manage");
-  return guard(() => {
+  return guard(async () => {
     const dias = optStr(fd, "validadeCustoDias");
-    saveMarginRule(getDb(), user, {
+    await saveMarginRule(getDb(), user, {
       escopo: str(fd, "escopo") as "categoria" | "fabricante",
       chave: str(fd, "chave"),
       margemBps: percentField(fd, "margem"),
@@ -49,8 +49,8 @@ export async function saveRuleAction(_prev: ActionState, fd: FormData): Promise<
 
 export async function deleteRuleAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requireCan("margin:manage");
-  return guard(() => {
-    deleteMarginRule(getDb(), user, intField(fd, "id"));
+  return guard(async () => {
+    await deleteMarginRule(getDb(), user, intField(fd, "id"));
     revalidatePath("/configuracoes");
     return "Regra excluída.";
   });

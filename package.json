@@ -11,8 +11,11 @@
     "create-admin": "tsx --env-file-if-exists=.env scripts/admin/create-admin.ts",
     "create-root": "tsx --env-file-if-exists=.env scripts/admin/create-root.ts",
     "promote-root": "tsx --env-file-if-exists=.env scripts/admin/promote-root.ts",
+    "db:migrate": "tsx --env-file-if-exists=.env scripts/ops/migrate.ts",
+    "vercel-build": "npm run db:migrate && next build",
     "backup": "tsx --env-file-if-exists=.env scripts/ops/backup.ts",
     "reset-2fa": "tsx --env-file-if-exists=.env scripts/admin/reset-2fa.ts",
+    "restore": "tsx --env-file-if-exists=.env scripts/ops/restore.ts",
     "seed:dev": "tsx --env-file=.env --env-file=.env.dev scripts/dev/dev-seed.ts",
     "dev:demo": "node scripts/dev/dev-demo.mjs"
   },
@@ -20,7 +23,6 @@
     "@libsql/client": "0.18.0",
     "@node-rs/argon2": "2.2.2",
     "@react-pdf/renderer": "4.9.0",
-    "better-sqlite3": "13.0.3",
     "drizzle-orm": "0.45.4",
     "exceljs": "4.4.0",
     "next": "16.4.0",
@@ -34,7 +36,6 @@
   "devDependencies": {
     "@playwright/test": "1.64.0",
     "@tailwindcss/postcss": "4.3.3",
-    "@types/better-sqlite3": "9.6.0",
     "@types/node": "26.6.4",
     "@types/qrcode": "1.5.6",
     "@types/react": "19.3.0",

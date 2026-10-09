@@ -11,7 +11,7 @@ const PROFILE_LABEL = { root: "Root", administrador: "Administrador", vendedor: 
 
 export default async function UsuariosPage() {
   const viewer = await requireCan("user:manage");
-  const users = listUsers(getDb(), viewer);
+  const users = await listUsers(getDb(), viewer);
   const canCreateAdmin = can(viewer, "admin:manage");
   return (
     <>

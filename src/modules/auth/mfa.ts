@@ -27,17 +27,17 @@ export type Challenge = {
 };
 
 /** Cria a etapa do 2FA depois da senha correta. O token vai num cookie curto; só o hash fica no banco. */
-export function createChallenge(db: Db, userId: number, now = new Date()): { token: string; expiresAt: Date } {
-  db.delete(mfaPendentes).where(lt(mfaPendentes.expiraEm, now)).run();
+export async function createChallenge(db: Db, userId: number, now = new Date()): Promise<{ token: string; expiresAt: Date }> {
+  await db.delete(mfaPendentes).where(lt(mfaPendentes.expiraEm, now)).run();
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(now.getTime() + CHALLENGE_MINUTES * 60_000);
-  db.insert(mfaPendentes).values({ tokenHash: hashToken(token), usuarioId: userId, expiraEm: expiresAt }).run();
+  await db.insert(mfaPendentes).values({ tokenHash: hashToken(token), usuarioId: userId, expiraEm: expiresAt }).run();
   return { token, expiresAt };
 }
 
-export function getChallenge(db: Db, token: string, now = new Date()): Challenge | null {
+export async function getChallenge(db: Db, token: string, now = new Date()): Promise<Challenge | null> {
   if (!token) return null;
-  const row = db
+  const row = await db
     .select({
       id: mfaPendentes.id,
       userId: usuarios.id,
@@ -58,55 +58,55 @@ export function getChallenge(db: Db, token: string, now = new Date()): Challenge
   return challenge;
 }
 
-export function discardChallenge(db: Db, token: string): void {
-  db.delete(mfaPendentes).where(eq(mfaPendentes.tokenHash, hashToken(token))).run();
+export async function discardChallenge(db: Db, token: string): Promise<void> {
+  await db.delete(mfaPendentes).where(eq(mfaPendentes.tokenHash, hashToken(token))).run();
 }
 
-function failAttempt(db: Db, challengeId: number, userId: number, now: Date) {
-  const row = db.select().from(mfaPendentes).where(eq(mfaPendentes.id, challengeId)).get();
-  if (row) db.update(mfaPendentes).set({ tentativas: row.tentativas + 1 }).where(eq(mfaPendentes.id, challengeId)).run();
-  recordLoginFailure(`mfa:${userId}`, now);
+async function failAttempt(db: Db, challengeId: number, userId: number, now: Date) {
+  const row = await db.select().from(mfaPendentes).where(eq(mfaPendentes.id, challengeId)).get();
+  if (row) await db.update(mfaPendentes).set({ tentativas: row.tentativas + 1 }).where(eq(mfaPendentes.id, challengeId)).run();
+  await recordLoginFailure(db, `mfa:${userId}`, now);
 }
 
 // ---------- configuração inicial (primeiro login) ----------
 
 /** Gera (ou reaproveita) o segredo pendente da etapa. O usuário só passa a ter 2FA depois de confirmar um código. */
-export function prepareEnrollment(db: Db, keyHex: string, token: string, now = new Date()): { secret: string; uri: string } | null {
-  const ch = getChallenge(db, token, now);
+export async function prepareEnrollment(db: Db, keyHex: string, token: string, now = new Date()): Promise<{ secret: string; uri: string } | null> {
+  const ch = await getChallenge(db, token, now);
   if (!ch || ch.totpAtivo) return null; // quem já tem 2FA não pode trocar o autenticador só com a senha
   let secret: string;
   if (ch.segredoPendenteCifrado) {
     secret = decryptSecret(ch.segredoPendenteCifrado, keyHex);
   } else {
     secret = newTotpSecret();
-    db.update(mfaPendentes).set({ segredoPendenteCifrado: encryptSecret(secret, keyHex) }).where(eq(mfaPendentes.id, ch.id)).run();
+    await db.update(mfaPendentes).set({ segredoPendenteCifrado: encryptSecret(secret, keyHex) }).where(eq(mfaPendentes.id, ch.id)).run();
   }
   return { secret, uri: totpUri(ch.email, secret) };
 }
 
 export type EnrollmentResult = { ok: true; userId: number; recoveryCodes: string[] } | { ok: false; error: string };
 
-export function completeEnrollment(db: Db, keyHex: string, token: string, code: string, now = new Date()): EnrollmentResult {
-  const ch = getChallenge(db, token, now);
+export async function completeEnrollment(db: Db, keyHex: string, token: string, code: string, now = new Date()): Promise<EnrollmentResult> {
+  const ch = await getChallenge(db, token, now);
   if (!ch || ch.totpAtivo || !ch.segredoPendenteCifrado) return { ok: false, error: "A etapa expirou. Entre novamente com e-mail e senha." };
-  if (!checkLoginAllowed(`mfa:${ch.userId}`, now).allowed) return { ok: false, error: "Muitas tentativas. Aguarde alguns minutos." };
+  if (!(await checkLoginAllowed(db, `mfa:${ch.userId}`, now)).allowed) return { ok: false, error: "Muitas tentativas. Aguarde alguns minutos." };
 
   const secret = decryptSecret(ch.segredoPendenteCifrado, keyHex);
   const result = verifyTotp(secret, code, null, now);
   if (!result.ok) {
-    failAttempt(db, ch.id, ch.userId, now);
+    await failAttempt(db, ch.id, ch.userId, now);
     return { ok: false, error: "Código incorreto. Confira o horário do celular e tente de novo." };
   }
 
   const recoveryCodes = generateRecoveryCodes();
-  db.transaction((tx) => {
-    tx.update(usuarios).set({ totpSegredoCifrado: ch.segredoPendenteCifrado, totpAtivo: true, totpUltimoPasso: result.step }).where(eq(usuarios.id, ch.userId)).run();
-    tx.delete(codigosRecuperacao).where(eq(codigosRecuperacao.usuarioId, ch.userId)).run();
-    for (const c of recoveryCodes) tx.insert(codigosRecuperacao).values({ usuarioId: ch.userId, codigoHash: hashRecoveryCode(c) }).run();
-    tx.delete(mfaPendentes).where(eq(mfaPendentes.id, ch.id)).run();
+  await db.transaction(async (tx) => {
+    await tx.update(usuarios).set({ totpSegredoCifrado: ch.segredoPendenteCifrado, totpAtivo: true, totpUltimoPasso: result.step }).where(eq(usuarios.id, ch.userId)).run();
+    await tx.delete(codigosRecuperacao).where(eq(codigosRecuperacao.usuarioId, ch.userId)).run();
+    for (const c of recoveryCodes) await tx.insert(codigosRecuperacao).values({ usuarioId: ch.userId, codigoHash: hashRecoveryCode(c) }).run();
+    await tx.delete(mfaPendentes).where(eq(mfaPendentes.id, ch.id)).run();
   });
-  clearLoginFailures(`mfa:${ch.userId}`);
-  recordAudit(db, { userId: ch.userId, acao: "2fa.ativar", entidade: "usuario", entidadeId: ch.userId });
+  await clearLoginFailures(db, `mfa:${ch.userId}`);
+  await recordAudit(db, { userId: ch.userId, acao: "2fa.ativar", entidade: "usuario", entidadeId: ch.userId });
   return { ok: true, userId: ch.userId, recoveryCodes };
 }
 
@@ -114,13 +114,13 @@ export function completeEnrollment(db: Db, keyHex: string, token: string, code: 
 
 export type LoginMfaResult = { ok: true; userId: number; usedRecovery: boolean } | { ok: false; error: string };
 
-export function verifyLoginCode(db: Db, keyHex: string, token: string, code: string, now = new Date()): LoginMfaResult {
-  const ch = getChallenge(db, token, now);
+export async function verifyLoginCode(db: Db, keyHex: string, token: string, code: string, now = new Date()): Promise<LoginMfaResult> {
+  const ch = await getChallenge(db, token, now);
   if (!ch || !ch.totpAtivo) return { ok: false, error: "A etapa expirou. Entre novamente com e-mail e senha." };
-  const gate = checkLoginAllowed(`mfa:${ch.userId}`, now);
+  const gate = await checkLoginAllowed(db, `mfa:${ch.userId}`, now);
   if (!gate.allowed) return { ok: false, error: `Muitas tentativas. Tente novamente em ${Math.ceil(gate.retryAfterSec / 60)} min.` };
 
-  const user = db.select().from(usuarios).where(eq(usuarios.id, ch.userId)).get();
+  const user = await db.select().from(usuarios).where(eq(usuarios.id, ch.userId)).get();
   if (!user?.totpSegredoCifrado) return { ok: false, error: "2FA não configurado para este usuário." };
 
   let secret: string;
@@ -133,48 +133,48 @@ export function verifyLoginCode(db: Db, keyHex: string, token: string, code: str
   const totp = verifyTotp(secret, code, user.totpUltimoPasso, now);
   if (totp.ok) {
     // Atualização condicional: se duas requisições usarem o mesmo código ao mesmo tempo, só uma vence.
-    const upd = db
+    const upd = await db
       .update(usuarios)
       .set({ totpUltimoPasso: totp.step })
       .where(and(eq(usuarios.id, user.id), or(isNull(usuarios.totpUltimoPasso), lt(usuarios.totpUltimoPasso, totp.step))))
       .run();
-    if (upd.changes === 1) {
-      db.delete(mfaPendentes).where(eq(mfaPendentes.id, ch.id)).run();
-      clearLoginFailures(`mfa:${user.id}`);
+    if (upd.rowsAffected === 1) {
+      await db.delete(mfaPendentes).where(eq(mfaPendentes.id, ch.id)).run();
+      await clearLoginFailures(db, `mfa:${user.id}`);
       return { ok: true, userId: user.id, usedRecovery: false };
     }
   } else if (/^[A-Za-z0-9\s-]{8,16}$/.test(code) && !/^\d{6}$/.test(code.replace(/\s/g, ""))) {
-    const used = db
+    const used = await db
       .update(codigosRecuperacao)
       .set({ usadoEm: now })
       .where(and(eq(codigosRecuperacao.usuarioId, user.id), eq(codigosRecuperacao.codigoHash, hashRecoveryCode(code)), isNull(codigosRecuperacao.usadoEm)))
       .run();
-    if (used.changes === 1) {
-      db.delete(mfaPendentes).where(eq(mfaPendentes.id, ch.id)).run();
-      clearLoginFailures(`mfa:${user.id}`);
-      recordAudit(db, { userId: user.id, acao: "2fa.codigo_recuperacao_usado", entidade: "usuario", entidadeId: user.id });
+    if (used.rowsAffected === 1) {
+      await db.delete(mfaPendentes).where(eq(mfaPendentes.id, ch.id)).run();
+      await clearLoginFailures(db, `mfa:${user.id}`);
+      await recordAudit(db, { userId: user.id, acao: "2fa.codigo_recuperacao_usado", entidade: "usuario", entidadeId: user.id });
       return { ok: true, userId: user.id, usedRecovery: true };
     }
   }
-  failAttempt(db, ch.id, user.id, now);
+  await failAttempt(db, ch.id, user.id, now);
   return { ok: false, error: "Código inválido." };
 }
 
-export function remainingRecoveryCodes(db: Db, userId: number): number {
-  return db.select().from(codigosRecuperacao).where(and(eq(codigosRecuperacao.usuarioId, userId), isNull(codigosRecuperacao.usadoEm))).all().length;
+export async function remainingRecoveryCodes(db: Db, userId: number): Promise<number> {
+  return (await db.select().from(codigosRecuperacao).where(and(eq(codigosRecuperacao.usuarioId, userId), isNull(codigosRecuperacao.usadoEm))).all()).length;
 }
 
 // ---------- administração ----------
 
 /** Perdeu o celular: o administrador zera o 2FA e o usuário configura de novo no próximo login. */
-export function resetUserMfa(db: Db, actor: SessionUser, userId: number): void {
+export async function resetUserMfa(db: Db, actor: SessionUser, userId: number): Promise<void> {
   assertCan(actor, "user:manage");
-  assertCanManageTarget(db, actor, userId);
-  db.transaction((tx) => {
-    tx.update(usuarios).set({ totpSegredoCifrado: null, totpAtivo: false, totpUltimoPasso: null }).where(eq(usuarios.id, userId)).run();
-    tx.delete(codigosRecuperacao).where(eq(codigosRecuperacao.usuarioId, userId)).run();
-    tx.delete(mfaPendentes).where(eq(mfaPendentes.usuarioId, userId)).run();
-    tx.delete(sessoes).where(eq(sessoes.usuarioId, userId)).run();
+  await assertCanManageTarget(db, actor, userId);
+  await db.transaction(async (tx) => {
+    await tx.update(usuarios).set({ totpSegredoCifrado: null, totpAtivo: false, totpUltimoPasso: null }).where(eq(usuarios.id, userId)).run();
+    await tx.delete(codigosRecuperacao).where(eq(codigosRecuperacao.usuarioId, userId)).run();
+    await tx.delete(mfaPendentes).where(eq(mfaPendentes.usuarioId, userId)).run();
+    await tx.delete(sessoes).where(eq(sessoes.usuarioId, userId)).run();
   });
-  recordAudit(db, { userId: actor.id, acao: "2fa.redefinir", entidade: "usuario", entidadeId: userId });
+  await recordAudit(db, { userId: actor.id, acao: "2fa.redefinir", entidade: "usuario", entidadeId: userId });
 }

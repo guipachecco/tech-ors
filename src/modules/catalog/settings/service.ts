@@ -9,9 +9,11 @@ import { parseInput, ValidationError } from "@/infra/validation";
 
 export type Settings = typeof configuracao.$inferSelect;
 
-export function getSettings(db: Db): Settings {
-  db.insert(configuracao).values({ id: 1 }).onConflictDoNothing().run();
-  return db.select().from(configuracao).where(eq(configuracao.id, 1)).get()!;
+export async function getSettings(db: Db): Promise<Settings> {
+  const row = await db.select().from(configuracao).where(eq(configuracao.id, 1)).get();
+  if (row) return row;
+  await db.insert(configuracao).values({ id: 1 }).onConflictDoNothing().run();
+  return (await db.select().from(configuracao).where(eq(configuracao.id, 1)).get())!;
 }
 
 const text = (max: number) => z.string().trim().max(max);
@@ -34,15 +36,15 @@ export const settingsSchema = z.object({
 });
 export type SettingsInput = z.input<typeof settingsSchema>;
 
-export function saveSettings(db: Db, user: SessionUser, input: SettingsInput): Settings {
+export async function saveSettings(db: Db, user: SessionUser, input: SettingsInput): Promise<Settings> {
   assertCan(user, "settings:manage");
   const data = parseInput(settingsSchema, input);
   if (data.margemMinimaPadraoBps > data.margemPadraoBps) {
     throw new ValidationError({ margemMinimaPadraoBps: "A margem mínima não pode ser maior que a margem padrão" });
   }
-  const before = getSettings(db);
-  db.update(configuracao).set(data).where(eq(configuracao.id, 1)).run();
-  const after = getSettings(db);
-  recordAudit(db, { userId: user.id, acao: "configuracao.alterar", entidade: "configuracao", entidadeId: 1, antes: before, depois: after });
+  const before = await getSettings(db);
+  await db.update(configuracao).set(data).where(eq(configuracao.id, 1)).run();
+  const after = await getSettings(db);
+  await recordAudit(db, { userId: user.id, acao: "configuracao.alterar", entidade: "configuracao", entidadeId: 1, antes: before, depois: after });
   return after;
 }

@@ -25,7 +25,7 @@ export default async function ImportacaoPage({ params }: { params: Promise<{ id:
 
   let record;
   try {
-    record = getImportRecord(db, user, id);
+    record = await getImportRecord(db, user, id);
   } catch (e) {
     if (e instanceof NotFoundError) notFound();
     throw e;
@@ -53,7 +53,7 @@ export default async function ImportacaoPage({ params }: { params: Promise<{ id:
     );
   }
 
-  const a = analyzeImport(db, user, id);
+  const a = await analyzeImport(db, user, id);
   const selectable = a.rows.filter((r) => r.status !== "erro");
   const select = "w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm";
 

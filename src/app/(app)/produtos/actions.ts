@@ -13,8 +13,8 @@ export async function saveProductAction(_prev: ActionState, fd: FormData): Promi
   const user = await requireUser();
   const idRaw = str(fd, "id");
   let redirectTo: string | null = null;
-  const result = await guard(() => {
-    const saved = saveProduct(getDb(), user, {
+  const result = await guard(async () => {
+    const saved = await saveProduct(getDb(), user, {
       id: idRaw ? Number(idRaw) : undefined,
       sku: str(fd, "sku"),
       fabricante: str(fd, "fabricante"),
@@ -34,8 +34,8 @@ export async function saveProductAction(_prev: ActionState, fd: FormData): Promi
 export async function addOfferAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requireCan("cost:write");
   const productId = intField(fd, "produtoId");
-  const result = await guard(() => {
-    addCostOffer(getDb(), user, {
+  const result = await guard(async () => {
+    await addCostOffer(getDb(), user, {
       produtoId: productId,
       fornecedorId: intField(fd, "fornecedorId"),
       custoCentavos: moneyField(fd, "custo"),
@@ -68,8 +68,8 @@ export async function uploadPhotoAction(_prev: ActionState, fd: FormData): Promi
 export async function removePhotoAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requireUser();
   const productId = intField(fd, "produtoId");
-  return guard(() => {
-    removeProductPhoto(getDb(), user, productId);
+  return guard(async () => {
+    await removeProductPhoto(getDb(), user, productId);
     revalidatePath(`/produtos/${productId}`);
     revalidatePath("/produtos");
     return "Foto removida.";

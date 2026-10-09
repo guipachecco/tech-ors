@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make g+
 COPY package.json package-lock.json ./
 RUN npm ci
 # Falha cedo se algum módulo nativo não carregar neste Linux (banco, imagens, senha).
-RUN node -e "const D=require('better-sqlite3');new D(':memory:').prepare('select 1').get();require('sharp');require('@node-rs/argon2');console.log('módulos nativos ok')"
+RUN node -e "const {createClient}=require('@libsql/client');createClient({url:':memory:'}).execute('select 1').then(()=>{require('sharp');require('@node-rs/argon2');console.log('módulos nativos ok')}).catch((e)=>{console.error(e);process.exit(1)})"
 
 # ---------- 2) build do Next.js ----------
 FROM base AS build

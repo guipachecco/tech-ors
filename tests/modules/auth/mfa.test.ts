@@ -19,144 +19,142 @@ const codeFor = (secret: string, when: Date) =>
   new OTPAuth.TOTP({ algorithm: "SHA1", digits: 6, period: 30, secret: OTPAuth.Secret.fromBase32(secret) }).generate({ timestamp: when.getTime() });
 
 let seq = 0;
-function setup() {
-  const db = createTestDb();
+async function setup() {
+  const db = await createTestDb();
   const n = ++seq;
-  clearLoginFailures(`mfa:1`);
-  const u = db.insert(usuarios).values({ nome: "Ana", email: `ana${n}@x.com`, senhaHash: "h", perfil: "vendedor" }).returning().get();
-  const admin = db.insert(usuarios).values({ nome: "Adm", email: `adm${n}@x.com`, senhaHash: "h", perfil: "administrador", podeVerCusto: true }).returning().get();
+  const u = await db.insert(usuarios).values({ nome: "Ana", email: `ana${n}@x.com`, senhaHash: "h", perfil: "vendedor" }).returning().get();
+  const admin = await db.insert(usuarios).values({ nome: "Adm", email: `adm${n}@x.com`, senhaHash: "h", perfil: "administrador", podeVerCusto: true }).returning().get();
   const adminU: SessionUser = { id: admin.id, nome: admin.nome, email: admin.email, perfil: "administrador", podeVerCusto: true };
-  clearLoginFailures(`mfa:${u.id}`);
   return { db, u, adminU };
 }
 
-function enroll(db: ReturnType<typeof setup>["db"], userId: number) {
-  const { token } = createChallenge(db, userId, T0);
-  const prep = prepareEnrollment(db, KEY, token, T0)!;
-  const done = completeEnrollment(db, KEY, token, codeFor(prep.secret, T0), T0);
+async function enroll(db: Awaited<ReturnType<typeof setup>>["db"], userId: number) {
+  const { token } = await createChallenge(db, userId, T0);
+  const prep = (await prepareEnrollment(db, KEY, token, T0))!;
+  const done = await completeEnrollment(db, KEY, token, codeFor(prep.secret, T0), T0);
   if (!done.ok) throw new Error(done.error);
   return { secret: prep.secret, recoveryCodes: done.recoveryCodes };
 }
 
 describe("enrollment", () => {
-  it("creates a pending secret, stored encrypted, and activates only after a valid code", () => {
-    const { db, u } = setup();
-    const { token } = createChallenge(db, u.id, T0);
-    const prep = prepareEnrollment(db, KEY, token, T0)!;
+  it("creates a pending secret, stored encrypted, and activates only after a valid code", async () => {
+    const { db, u } = await setup();
+    const { token } = await createChallenge(db, u.id, T0);
+    const prep = (await prepareEnrollment(db, KEY, token, T0))!;
     expect(prep.uri).toContain("otpauth://totp/");
-    expect(prepareEnrollment(db, KEY, token, T0)!.secret).toBe(prep.secret); // reaproveita o mesmo segredo
+    expect((await prepareEnrollment(db, KEY, token, T0))!.secret).toBe(prep.secret); // reaproveita o mesmo segredo
 
-    const before = db.select().from(usuarios).where(eq(usuarios.id, u.id)).get()!;
+    const before = (await db.select().from(usuarios).where(eq(usuarios.id, u.id)).get())!;
     expect(before.totpAtivo).toBe(false);
     expect(before.totpSegredoCifrado).toBeNull();
 
-    const wrong = completeEnrollment(db, KEY, token, "000000", T0);
+    const wrong = await completeEnrollment(db, KEY, token, "000000", T0);
     expect(wrong.ok).toBe(false);
-    expect(db.select().from(usuarios).where(eq(usuarios.id, u.id)).get()!.totpAtivo).toBe(false);
+    expect((await db.select().from(usuarios).where(eq(usuarios.id, u.id)).get())!.totpAtivo).toBe(false);
 
-    const ok = completeEnrollment(db, KEY, token, codeFor(prep.secret, T0), T0);
+    const ok = await completeEnrollment(db, KEY, token, codeFor(prep.secret, T0), T0);
     expect(ok.ok).toBe(true);
-    const after = db.select().from(usuarios).where(eq(usuarios.id, u.id)).get()!;
+    const after = (await db.select().from(usuarios).where(eq(usuarios.id, u.id)).get())!;
     expect(after.totpAtivo).toBe(true);
     expect(after.totpSegredoCifrado).not.toContain(prep.secret);
-    expect(remainingRecoveryCodes(db, u.id)).toBe(10);
-    expect(getChallenge(db, token, T0)).toBeNull(); // etapa consumida
+    expect(await remainingRecoveryCodes(db, u.id)).toBe(10);
+    expect(await getChallenge(db, token, T0)).toBeNull(); // etapa consumida
   });
 
-  it("stores only hashes of the recovery codes", () => {
-    const { db, u } = setup();
-    const { recoveryCodes } = enroll(db, u.id);
-    const stored = db.select().from(codigosRecuperacao).all().map((r) => r.codigoHash).join(" ");
+  it("stores only hashes of the recovery codes", async () => {
+    const { db, u } = await setup();
+    const { recoveryCodes } = await enroll(db, u.id);
+    const stored = (await db.select().from(codigosRecuperacao).all()).map((r) => r.codigoHash).join(" ");
     for (const c of recoveryCodes) expect(stored).not.toContain(c.replace("-", ""));
   });
 
-  it("does not let someone with only the password replace an active authenticator", () => {
-    const { db, u } = setup();
-    enroll(db, u.id);
-    const { token } = createChallenge(db, u.id, at(60));
-    expect(prepareEnrollment(db, KEY, token, at(60))).toBeNull();
-    expect(completeEnrollment(db, KEY, token, "123456", at(60)).ok).toBe(false);
+  it("does not let someone with only the password replace an active authenticator", async () => {
+    const { db, u } = await setup();
+    await enroll(db, u.id);
+    const { token } = await createChallenge(db, u.id, at(60));
+    expect(await prepareEnrollment(db, KEY, token, at(60))).toBeNull();
+    expect((await completeEnrollment(db, KEY, token, "123456", at(60))).ok).toBe(false);
   });
 });
 
 describe("login verification", () => {
-  it("accepts a valid code once and refuses replay", () => {
-    const { db, u } = setup();
-    const { secret } = enroll(db, u.id);
+  it("accepts a valid code once and refuses replay", async () => {
+    const { db, u } = await setup();
+    const { secret } = await enroll(db, u.id);
     const t = at(90);
     const code = codeFor(secret, t);
-    const c1 = createChallenge(db, u.id, t);
-    expect(verifyLoginCode(db, KEY, c1.token, code, t)).toEqual({ ok: true, userId: u.id, usedRecovery: false });
-    const c2 = createChallenge(db, u.id, t);
-    expect(verifyLoginCode(db, KEY, c2.token, code, t).ok).toBe(false); // mesmo código, mesmo passo
+    const c1 = await createChallenge(db, u.id, t);
+    expect(await verifyLoginCode(db, KEY, c1.token, code, t)).toEqual({ ok: true, userId: u.id, usedRecovery: false });
+    const c2 = await createChallenge(db, u.id, t);
+    expect((await verifyLoginCode(db, KEY, c2.token, code, t)).ok).toBe(false); // mesmo código, mesmo passo
   });
 
-  it("expires the challenge after 5 minutes", () => {
-    const { db, u } = setup();
-    const { secret } = enroll(db, u.id);
-    const c = createChallenge(db, u.id, at(120));
+  it("expires the challenge after 5 minutes", async () => {
+    const { db, u } = await setup();
+    const { secret } = await enroll(db, u.id);
+    const c = await createChallenge(db, u.id, at(120));
     const late = at(120 + 5 * 60 + 1);
-    expect(verifyLoginCode(db, KEY, c.token, codeFor(secret, late), late).ok).toBe(false);
+    expect((await verifyLoginCode(db, KEY, c.token, codeFor(secret, late), late)).ok).toBe(false);
   });
 
-  it("locks the challenge after 5 wrong codes, even if the right one comes next", () => {
-    const { db, u } = setup();
-    const { secret } = enroll(db, u.id);
+  it("locks the challenge after 5 wrong codes, even if the right one comes next", async () => {
+    const { db, u } = await setup();
+    const { secret } = await enroll(db, u.id);
     const t = at(150);
-    const c = createChallenge(db, u.id, t);
-    for (let i = 0; i < 5; i++) expect(verifyLoginCode(db, KEY, c.token, "000000", t).ok).toBe(false);
-    expect(verifyLoginCode(db, KEY, c.token, codeFor(secret, t), t).ok).toBe(false);
+    const c = await createChallenge(db, u.id, t);
+    for (let i = 0; i < 5; i++) expect((await verifyLoginCode(db, KEY, c.token, "000000", t)).ok).toBe(false);
+    expect((await verifyLoginCode(db, KEY, c.token, codeFor(secret, t), t)).ok).toBe(false);
   });
 
-  it("limits guesses per user across fresh challenges (password is not enough to keep trying)", () => {
-    const { db, u } = setup();
-    const { secret } = enroll(db, u.id);
+  it("limits guesses per user across fresh challenges (password is not enough to keep trying)", async () => {
+    const { db, u } = await setup();
+    const { secret } = await enroll(db, u.id);
     const t = at(180);
     for (let round = 0; round < 3; round++) {
-      const c = createChallenge(db, u.id, t);
-      for (let i = 0; i < 2; i++) verifyLoginCode(db, KEY, c.token, "000000", t);
+      const c = await createChallenge(db, u.id, t);
+      for (let i = 0; i < 2; i++) await verifyLoginCode(db, KEY, c.token, "000000", t);
     }
-    const fresh = createChallenge(db, u.id, t);
-    const r = verifyLoginCode(db, KEY, fresh.token, codeFor(secret, t), t);
+    const fresh = await createChallenge(db, u.id, t);
+    const r = await verifyLoginCode(db, KEY, fresh.token, codeFor(secret, t), t);
     expect(r.ok).toBe(false);
     expect(!r.ok && r.error).toContain("Muitas tentativas");
   });
 
-  it("accepts each recovery code only once", () => {
-    const { db, u } = setup();
-    const { recoveryCodes } = enroll(db, u.id);
+  it("accepts each recovery code only once", async () => {
+    const { db, u } = await setup();
+    const { recoveryCodes } = await enroll(db, u.id);
     const t = at(200);
-    const c1 = createChallenge(db, u.id, t);
-    expect(verifyLoginCode(db, KEY, c1.token, recoveryCodes[0].toLowerCase(), t)).toEqual({ ok: true, userId: u.id, usedRecovery: true });
-    const c2 = createChallenge(db, u.id, t);
-    expect(verifyLoginCode(db, KEY, c2.token, recoveryCodes[0], t).ok).toBe(false);
-    expect(remainingRecoveryCodes(db, u.id)).toBe(9);
+    const c1 = await createChallenge(db, u.id, t);
+    expect(await verifyLoginCode(db, KEY, c1.token, recoveryCodes[0].toLowerCase(), t)).toEqual({ ok: true, userId: u.id, usedRecovery: true });
+    const c2 = await createChallenge(db, u.id, t);
+    expect((await verifyLoginCode(db, KEY, c2.token, recoveryCodes[0], t)).ok).toBe(false);
+    expect(await remainingRecoveryCodes(db, u.id)).toBe(9);
   });
 
-  it("rejects inactive users", () => {
-    const { db, u } = setup();
-    const { secret } = enroll(db, u.id);
+  it("rejects inactive users", async () => {
+    const { db, u } = await setup();
+    const { secret } = await enroll(db, u.id);
     const t = at(220);
-    const c = createChallenge(db, u.id, t);
-    db.update(usuarios).set({ ativo: false }).where(eq(usuarios.id, u.id)).run();
-    expect(verifyLoginCode(db, KEY, c.token, codeFor(secret, t), t).ok).toBe(false);
+    const c = await createChallenge(db, u.id, t);
+    await db.update(usuarios).set({ ativo: false }).where(eq(usuarios.id, u.id)).run();
+    expect((await verifyLoginCode(db, KEY, c.token, codeFor(secret, t), t)).ok).toBe(false);
   });
 });
 
 describe("admin reset", () => {
   it("clears 2FA, recovery codes and sessions; only administrators can do it", async () => {
-    const { db, u, adminU } = setup();
-    enroll(db, u.id);
+    const { db, u, adminU } = await setup();
+    await enroll(db, u.id);
     const { token } = await createSession(db, u.id);
     const sellerU: SessionUser = { id: u.id, nome: u.nome, email: u.email, perfil: "vendedor", podeVerCusto: false };
-    expect(() => resetUserMfa(db, sellerU, u.id)).toThrow(ForbiddenError);
+    await expect(resetUserMfa(db, sellerU, u.id)).rejects.toThrow(ForbiddenError);
 
-    resetUserMfa(db, adminU, u.id);
-    const row = db.select().from(usuarios).where(eq(usuarios.id, u.id)).get()!;
+    await resetUserMfa(db, adminU, u.id);
+    const row = (await db.select().from(usuarios).where(eq(usuarios.id, u.id)).get())!;
     expect(row).toMatchObject({ totpAtivo: false, totpSegredoCifrado: null, totpUltimoPasso: null });
-    expect(remainingRecoveryCodes(db, u.id)).toBe(0);
+    expect(await remainingRecoveryCodes(db, u.id)).toBe(0);
     expect(await validateSession(db, token)).toBeNull();
-    const c = createChallenge(db, u.id, at(300));
-    expect(prepareEnrollment(db, KEY, c.token, at(300))).not.toBeNull(); // pode configurar de novo
+    const c = await createChallenge(db, u.id, at(300));
+    expect(await prepareEnrollment(db, KEY, c.token, at(300))).not.toBeNull(); // pode configurar de novo
   });
 });

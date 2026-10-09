@@ -55,15 +55,15 @@ export default async function OrcamentoPage({
   const db = getDb();
   let quote;
   try {
-    quote = getQuote(db, id);
+    quote = await getQuote(db, id);
   } catch (e) {
     if (e instanceof NotFoundError) notFound();
     throw e;
   }
   const now = new Date();
-  const client = getClient(db, quote.clienteId);
-  const rawItems = getItems(db, id);
-  const items = toItemViews(rawItems, user, now, photoVersionsFor(db, rawItems));
+  const client = await getClient(db, quote.clienteId);
+  const rawItems = await getItems(db, id);
+  const items = toItemViews(rawItems, user, now, await photoVersionsFor(db, rawItems));
   const totals = quoteTotals(quote, rawItems);
   const editable = quote.status === "em_elaboracao";
   const showCost = can(user, "cost:view");
@@ -71,8 +71,8 @@ export default async function OrcamentoPage({
   const blockers = check.ok ? [] : check.motivos;
   const onlyOverridable = blockers.length > 0 && blockers.every((m) => OVERRIDABLE.includes(m));
   const canOverride = can(user, "quote:override");
-  const results = editable && q ? searchProducts(db, user, q, 20, now) : [];
-  const drift = editable && showCost ? quoteDrift(db, user, id, now) : [];
+  const results = editable && q ? await searchProducts(db, user, q, 20, now) : [];
+  const drift = editable && showCost ? await quoteDrift(db, user, id, now) : [];
 
   return (
     <>

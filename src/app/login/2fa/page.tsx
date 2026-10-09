@@ -16,12 +16,12 @@ export const dynamic = "force-dynamic";
 export default async function TwoFactorPage() {
   const token = (await cookies()).get(MFA_COOKIE)?.value ?? "";
   const db = getDb();
-  const challenge = getChallenge(db, token);
+  const challenge = await getChallenge(db, token);
   if (!challenge) redirect("/login");
 
   let enroll: { qr: string; secret: string } | null = null;
   if (!challenge.totpAtivo) {
-    const prep = prepareEnrollment(db, totpKey(), token);
+    const prep = await prepareEnrollment(db, totpKey(), token);
     if (!prep) redirect("/login");
     // QR gerado aqui no servidor: o segredo nunca é enviado a um serviço externo.
     const qr = await QRCode.toDataURL(prep.uri, { margin: 1, width: 376, errorCorrectionLevel: "M", color: { dark: "#0b0a16", light: "#ffffff" } });

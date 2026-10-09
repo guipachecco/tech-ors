@@ -9,7 +9,7 @@ import { uploadImportAction } from "./actions";
 
 export default async function ImportarPage() {
   await requireCan("cost:write");
-  const suppliers = listSuppliers(getDb());
+  const suppliers = await listSuppliers(getDb());
   return (
     <>
       <PageHeader title="Importar planilha de fornecedor" subtitle="Atualize custos e cadastre produtos a partir do arquivo que o fornecedor enviou" />

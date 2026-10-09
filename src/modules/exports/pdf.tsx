@@ -42,10 +42,12 @@ const s = StyleSheet.create({
   footer: { position: "absolute", bottom: 24, left: 36, right: 36, flexDirection: "row", justifyContent: "space-between", fontSize: 8, color: MUTED },
 });
 
-export function findLogo(dir = path.join(process.cwd(), "assets")): string | undefined {
+// O logo é lido do disco em tempo de execução. Os avisos do Turbopack ficam desligados de propósito (senão ele incluiria
+// o projeto inteiro na função); em vez disso o arquivo é listado em outputFileTracingIncludes (next.config.ts).
+export function findLogo(dir = path.join(/*turbopackIgnore: true*/ process.cwd(), "assets")): string | undefined {
   for (const name of ["logo.png", "logo.jpg", "logo.jpeg"]) {
-    const p = path.join(dir, name);
-    if (fs.existsSync(p)) return p;
+    const p = path.join(/*turbopackIgnore: true*/ dir, name);
+    if (fs.existsSync(/*turbopackIgnore: true*/ p)) return p;
   }
   return undefined;
 }
@@ -55,7 +57,7 @@ type LogoSrc = { data: Buffer; format: "png" | "jpg" };
 // Passa a imagem como dados: caminhos do Windows (C:...) são confundidos com URL pelo react-pdf.
 function readLogo(logoPath?: string): LogoSrc | undefined {
   if (!logoPath) return undefined;
-  return { data: fs.readFileSync(logoPath), format: /\.png$/i.test(logoPath) ? "png" : "jpg" };
+  return { data: fs.readFileSync(/*turbopackIgnore: true*/ logoPath), format: /\.png$/i.test(logoPath) ? "png" : "jpg" };
 }
 
 function QuotePdf({ view, logo }: { view: QuoteClientView; logo?: LogoSrc }) {
