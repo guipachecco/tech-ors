@@ -49,7 +49,7 @@ async function main() {
   }
   saveClient(db, actor, { razaoSocial: "Indústria São João Ltda", cnpj: "11.222.333/0001-81", contato: "Ana Souza", email: "ana@saojoao.test" });
   saveClient(db, actor, { razaoSocial: "Clínica Vida Plena", contato: "Dr. Paulo" });
-  console.log("Seed concluído. Usuários: admin@teste.local e vendedor@teste.local (senha no arquivo scripts/dev-seed.ts).");
+  console.log("Seed concluído. Usuários: admin@teste.local e vendedor@teste.local (senha no arquivo scripts/dev/dev-seed.ts).");
 }
 
 main().catch((e) => {

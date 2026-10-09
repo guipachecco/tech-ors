@@ -12,7 +12,7 @@ playwright-report/
 next-env.d.ts
 .env.dev
 
-# planilhas de fornecedores (preços comerciais; não vão para o Git)
-planilhas/
+# planilhas de exemplo de fornecedores (preços comerciais; não vão para o Git)
+exemplos/
 
 *.tsbuildinfo

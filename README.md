@@ -4,7 +4,7 @@ Sistema local para montar, calcular e exportar orçamentos de equipamentos de TI
 
 - Especificação: `docs/superpowers/specs/2026-10-09-orcamentos-mvp-design.md`
 - Plano: `docs/superpowers/plans/2026-10-09-orcamentos-mvp.md`
-- Uso diário: `docs/guia-de-uso.md` · Operação e backup: `docs/operacao.md`
+- Uso diário: `docs/guia-de-uso.md` · Operação e backup: `docs/operacao.md` · **Arquitetura: `docs/arquitetura.md`**
 
 ## Primeiro uso
 
@@ -24,7 +24,7 @@ O arquivo `.env` precisa ter `SESSION_SECRET` (32+ caracteres) e `TOTP_ENCRYPTIO
 ## Demonstração (banco de teste separado)
 
 ```bash
-npm run seed:dev     # cria dados de exemplo em data/dev.db (usuários de teste no arquivo scripts/dev-seed.ts)
+npm run seed:dev     # cria dados de exemplo em data/dev.db (usuários de teste no arquivo scripts/dev/dev-seed.ts)
 npm run dev:demo     # http://localhost:3100
 ```
 
