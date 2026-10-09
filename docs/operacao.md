@@ -3,7 +3,8 @@
 ## Onde ficam os dados
 
 - Banco: `%LOCALAPPDATA%\TechMasterOrcamentos\orcamentos.db` (ou o caminho em `DATABASE_PATH`). **Não** coloque o banco dentro do OneDrive: a sincronização pode corromper o arquivo.
-- Segredo da sessão: `SESSION_SECRET` no arquivo `.env` (não vai para o Git).
+- Segredos no arquivo `.env` (não vai para o Git): `SESSION_SECRET` (sessões) e **`TOTP_ENCRYPTION_KEY`** (criptografa os segredos do 2FA no banco).
+- ⚠️ **Faça cópia do `.env` junto com os backups do banco.** Sem a `TOTP_ENCRYPTION_KEY` original, os 2FA já cadastrados ficam ilegíveis e todos precisam reconfigurar (use `npm run reset-2fa -- email` para cada usuário). Nunca coloque o `.env` no Git nem em e-mail.
 
 ## Backup diário
 
@@ -24,7 +25,8 @@ npm run backup -- D:\backups\orc    # outra pasta
 
 ## Administração
 
-- Novo administrador: `npm run create-admin`.
+- Novo administrador: `npm run create-admin` (no primeiro login ele configura o 2FA).
+- 2FA de alguém travado: `Usuários → Redefinir 2FA` (administrador) ou, pelo servidor, `npm run reset-2fa -- email@empresa.com`.
 - Esqueceu a senha de um usuário: outro administrador usa **Usuários → Redefinir senha**.
 - Se o servidor ficar acessível pela rede interna **sem HTTPS**, defina `INSECURE_COOKIES=1` no `.env` (caso contrário o cookie de sessão `Secure` não é aceito fora de `localhost`). Prefira HTTPS ao expor fora do escritório.
 

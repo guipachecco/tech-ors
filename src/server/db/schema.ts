@@ -194,3 +194,28 @@ export const sequenciaOrcamento = sqliteTable("sequencia_orcamento", {
   ano: integer("ano").primaryKey(),
   ultimo: integer("ultimo").notNull(),
 });
+
+/** Mapeamento de colunas salvo por fornecedor: a próxima planilha dele já vem configurada. */
+export const modelosImportacao = sqliteTable("modelos_importacao", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  fornecedorId: integer("fornecedor_id").notNull().unique().references(() => fornecedores.id),
+  mapeamentoJson: text("mapeamento_json").notNull(),
+  padroesJson: text("padroes_json").notNull().default("{}"),
+  atualizadoEm: integer("atualizado_em", { mode: "timestamp_ms" }).notNull().default(now),
+});
+
+/** Planilha enviada, guardada até ser confirmada (ou expirar). Nada vai ao catálogo antes da confirmação. */
+export const importacoes = sqliteTable("importacoes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  usuarioId: integer("usuario_id").notNull().references(() => usuarios.id),
+  fornecedorId: integer("fornecedor_id").notNull().references(() => fornecedores.id),
+  nomeArquivo: text("nome_arquivo").notNull(),
+  cabecalhosJson: text("cabecalhos_json").notNull(),
+  linhasJson: text("linhas_json").notNull(),
+  mapeamentoJson: text("mapeamento_json"),
+  padroesJson: text("padroes_json").notNull().default("{}"),
+  resumoJson: text("resumo_json"),
+  aplicadaEm: integer("aplicada_em", { mode: "timestamp_ms" }),
+  expiraEm: integer("expira_em", { mode: "timestamp_ms" }).notNull(),
+  criadoEm: createdAt(),
+});

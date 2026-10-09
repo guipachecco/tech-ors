@@ -17,6 +17,8 @@ const securityHeaders = [
 const config: NextConfig = {
   // Só afeta o modo de desenvolvimento: permite abrir o servidor de teste por 127.0.0.1 além de localhost.
   allowedDevOrigins: ["127.0.0.1"],
+  // Planilhas de fornecedores chegam como upload (limite do arquivo: 5 MB, conferido no servidor).
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
   serverExternalPackages: ["better-sqlite3", "@node-rs/argon2", "@react-pdf/renderer", "exceljs"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

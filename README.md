@@ -11,13 +11,14 @@ Sistema local para montar, calcular e exportar orçamentos de equipamentos de TI
 ```bash
 npm install
 npm run create-admin        # cria o administrador (a senha é digitada oculta)
+                            # no primeiro login ele configura o Google Authenticator (2FA)
 npm run build
 npm start                   # http://localhost:3000
 ```
 
 No Windows, dê dois cliques em `iniciar.bat` (faz o build se precisar e sobe o servidor).
 
-O arquivo `.env` precisa ter `SESSION_SECRET` (32+ caracteres; veja `.env.example`). O banco fica em
+O arquivo `.env` precisa ter `SESSION_SECRET` (32+ caracteres) e `TOTP_ENCRYPTION_KEY` (64 hex); veja `.env.example` e **guarde uma cópia do `.env`**. O banco fica em
 `%LOCALAPPDATA%\TechMasterOrcamentos\orcamentos.db`, **fora do OneDrive**.
 
 ## Demonstração (banco de teste separado)

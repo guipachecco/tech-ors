@@ -15,6 +15,13 @@
       "when": 1791560589002,
       "tag": "0001_smooth_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791561152228,
+      "tag": "0002_safe_azazel",
+      "breakpoints": true
     }
   ]
 }

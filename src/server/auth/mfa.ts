@@ -122,7 +122,14 @@ export function verifyLoginCode(db: Db, keyHex: string, token: string, code: str
   const user = db.select().from(usuarios).where(eq(usuarios.id, ch.userId)).get();
   if (!user?.totpSegredoCifrado) return { ok: false, error: "2FA não configurado para este usuário." };
 
-  const totp = verifyTotp(decryptSecret(user.totpSegredoCifrado, keyHex), code, user.totpUltimoPasso, now);
+  let secret: string;
+  try {
+    secret = decryptSecret(user.totpSegredoCifrado, keyHex);
+  } catch {
+    // Chave do .env diferente da usada ao cadastrar o 2FA (ou dado corrompido).
+    return { ok: false, error: "Não foi possível ler o 2FA deste usuário. Peça a um administrador para redefinir (ou use npm run reset-2fa no servidor)." };
+  }
+  const totp = verifyTotp(secret, code, user.totpUltimoPasso, now);
   if (totp.ok) {
     // Atualização condicional: se duas requisições usarem o mesmo código ao mesmo tempo, só uma vence.
     const upd = db

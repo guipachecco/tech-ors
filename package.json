@@ -10,6 +10,7 @@
     "db:generate": "drizzle-kit generate",
     "create-admin": "tsx --env-file=.env scripts/create-admin.ts",
     "backup": "tsx --env-file=.env scripts/backup.ts",
+    "reset-2fa": "tsx --env-file=.env scripts/reset-2fa.ts",
     "seed:dev": "tsx --env-file=.env --env-file=.env.dev scripts/dev-seed.ts",
     "dev:demo": "node scripts/dev-demo.mjs"
   },
