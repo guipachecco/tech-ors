@@ -2,6 +2,7 @@
 # Troque "orcamentos-techmaster" por um nome único seu antes do primeiro `fly launch`/`fly deploy`.
 app = "orcamentos-techmaster"
 primary_region = "gru"   # São Paulo
+swap_size_mb = 512       # memória extra em disco, para a máquina barata de 512 MB
 
 [build]
   dockerfile = "Dockerfile"
@@ -21,8 +22,6 @@ primary_region = "gru"   # São Paulo
   min_machines_running = 1
 
 # Máquina mais barata que aguenta o sistema. Se aparecer erro de memória (ao enviar fotos grandes), troque para "1gb".
-swap_size_mb = 512
-
 [[vm]]
   memory = "512mb"
   cpu_kind = "shared"
