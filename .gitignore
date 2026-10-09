@@ -1,0 +1,12 @@
+.env
+.env.local
+data/
+node_modules/
+.next/
+*.db
+*.db-wal
+*.db-shm
+backups/
+test-results/
+playwright-report/
+next-env.d.ts
