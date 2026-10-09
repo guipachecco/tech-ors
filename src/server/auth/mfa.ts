@@ -5,6 +5,7 @@ import type { Db } from "../db/client";
 import { codigosRecuperacao, mfaPendentes, sessoes, usuarios } from "../db/schema";
 import { NotFoundError } from "../validation";
 import { assertCan } from "./permissions";
+import { assertCanManageTarget } from "./protect";
 import type { SessionUser } from "./sessions";
 import { checkLoginAllowed, clearLoginFailures, recordLoginFailure } from "./throttle";
 import {
@@ -168,8 +169,7 @@ export function remainingRecoveryCodes(db: Db, userId: number): number {
 /** Perdeu o celular: o administrador zera o 2FA e o usuário configura de novo no próximo login. */
 export function resetUserMfa(db: Db, actor: SessionUser, userId: number): void {
   assertCan(actor, "user:manage");
-  const u = db.select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.id, userId)).get();
-  if (!u) throw new NotFoundError("Usuário");
+  assertCanManageTarget(db, actor, userId);
   db.transaction((tx) => {
     tx.update(usuarios).set({ totpSegredoCifrado: null, totpAtivo: false, totpUltimoPasso: null }).where(eq(usuarios.id, userId)).run();
     tx.delete(codigosRecuperacao).where(eq(codigosRecuperacao.usuarioId, userId)).run();

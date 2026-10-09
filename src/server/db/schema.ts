@@ -9,7 +9,7 @@ export const usuarios = sqliteTable("usuarios", {
   nome: text("nome").notNull(),
   email: text("email").notNull().unique(),
   senhaHash: text("senha_hash").notNull(),
-  perfil: text("perfil", { enum: ["administrador", "vendedor"] }).notNull(),
+  perfil: text("perfil", { enum: ["root", "administrador", "vendedor"] }).notNull(),
   podeVerCusto: integer("pode_ver_custo", { mode: "boolean" }).notNull().default(false),
   ativo: integer("ativo", { mode: "boolean" }).notNull().default(true),
   totpSegredoCifrado: text("totp_segredo_cifrado"),

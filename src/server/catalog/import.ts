@@ -5,7 +5,7 @@ import {
 } from "../../domain/import";
 import type { Cents } from "../../domain/money";
 import { recordAudit } from "../audit";
-import { assertCan } from "../auth/permissions";
+import { assertCan, can } from "../auth/permissions";
 import type { SessionUser } from "../auth/sessions";
 import type { Db } from "../db/client";
 import { fornecedores, importacoes, modelosImportacao, ofertasCusto, produtos } from "../db/schema";
@@ -122,7 +122,7 @@ export type ImportRecord = typeof importacoes.$inferSelect;
 function ownImport(db: Db, user: SessionUser, id: number): ImportRecord {
   assertCan(user, "cost:write");
   const rec = db.select().from(importacoes).where(eq(importacoes.id, id)).get();
-  if (!rec || (rec.usuarioId !== user.id && user.perfil !== "administrador")) throw new NotFoundError("Importação");
+  if (!rec || (rec.usuarioId !== user.id && !can(user, "user:manage"))) throw new NotFoundError("Importação");
   return rec;
 }
 

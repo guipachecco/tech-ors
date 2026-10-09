@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { recordAudit } from "./audit";
-import { assertCan } from "./auth/permissions";
+import { assertCan, can, ForbiddenError } from "./auth/permissions";
+import { assertCanManageTarget } from "./auth/protect";
 import { hashPassword, validatePasswordStrength } from "./auth/password";
 import type { SessionUser } from "./auth/sessions";
 import type { Db } from "./db/client";
@@ -31,6 +32,8 @@ const createSchema = z.object({
 export async function createUser(db: Db, actor: SessionUser, input: z.input<typeof createSchema>): Promise<UserRow> {
   assertCan(actor, "user:manage");
   const data = parseInput(createSchema, input);
+  // Administradores criam vendedores; criar administrador é do Root. O Root em si só nasce pelo servidor (npm run create-root).
+  if (data.perfil === "administrador" && !can(actor, "admin:manage")) throw new ForbiddenError("criar administradores (somente o Root)");
   try {
     validatePasswordStrength(data.senha);
   } catch (e) {
@@ -50,8 +53,12 @@ export async function createUser(db: Db, actor: SessionUser, input: z.input<type
 
 export function updateUserAccess(db: Db, actor: SessionUser, userId: number, patch: { ativo?: boolean; podeVerCusto?: boolean }): UserRow {
   assertCan(actor, "user:manage");
+  const target = assertCanManageTarget(db, actor, userId);
   const before = db.select(publicCols).from(usuarios).where(eq(usuarios.id, userId)).get();
   if (!before) throw new NotFoundError("Usuário");
+  if (target.perfil === "root" && patch.ativo === false) {
+    throw new ValidationError({ _: "A conta Root não pode ser desativada pela aplicação" });
+  }
   if (userId === actor.id && patch.ativo === false) {
     throw new ValidationError({ _: "Você não pode desativar o próprio usuário" });
   }
@@ -68,8 +75,7 @@ export async function resetPassword(db: Db, actor: SessionUser, userId: number, 
   } catch (e) {
     throw new ValidationError({ senha: (e as Error).message });
   }
-  const exists = db.select(publicCols).from(usuarios).where(eq(usuarios.id, userId)).get();
-  if (!exists) throw new NotFoundError("Usuário");
+  assertCanManageTarget(db, actor, userId);
   db.update(usuarios).set({ senhaHash: await hashPassword(senha) }).where(eq(usuarios.id, userId)).run();
   db.delete(sessoes).where(eq(sessoes.usuarioId, userId)).run();
   recordAudit(db, { userId: actor.id, acao: "usuario.redefinir_senha", entidade: "usuario", entidadeId: userId });

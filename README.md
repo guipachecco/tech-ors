@@ -10,7 +10,7 @@ Sistema local para montar, calcular e exportar orçamentos de equipamentos de TI
 
 ```bash
 npm install
-npm run create-admin        # cria o administrador (a senha é digitada oculta)
+npm run create-root         # cria a conta Root, a sua (a senha é digitada oculta)
                             # no primeiro login ele configura o Google Authenticator (2FA)
 npm run build
 npm start                   # http://localhost:3000

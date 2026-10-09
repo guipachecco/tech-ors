@@ -40,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-3 text-sm">
             <div className="hidden text-right leading-tight sm:block">
               <div className="font-medium text-slate-800">{user.nome}</div>
-              <div className="text-xs capitalize text-slate-500">{user.perfil}</div>
+              <div className="text-xs text-slate-500">{user.perfil === "root" ? "Root" : user.perfil === "administrador" ? "Administrador" : "Vendedor"}</div>
             </div>
             <ThemeToggle />
             <form action={logoutAction}>

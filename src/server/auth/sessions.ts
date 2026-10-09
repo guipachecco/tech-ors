@@ -5,7 +5,7 @@ import { sessoes, usuarios } from "../db/schema";
 
 export const SESSION_HOURS = 12;
 
-export type Role = "administrador" | "vendedor";
+export type Role = "root" | "administrador" | "vendedor";
 export type SessionUser = {
   id: number;
   nome: string;

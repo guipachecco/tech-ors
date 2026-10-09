@@ -6,7 +6,9 @@ export type Action =
   | "margin:manage"
   | "quote:override"
   | "user:manage"
-  | "settings:manage";
+  | "settings:manage"
+  /** Criar/promover administradores e alterar contas de administrador: só o Root. */
+  | "admin:manage";
 
 export class ForbiddenError extends Error {
   constructor(action?: string) {
@@ -16,7 +18,8 @@ export class ForbiddenError extends Error {
 }
 
 export function can(user: SessionUser, action: Action): boolean {
-  if (user.perfil === "administrador") return true;
+  if (user.perfil === "root") return true;
+  if (user.perfil === "administrador") return action !== "admin:manage";
   if (action === "cost:view" || action === "cost:write") return user.podeVerCusto;
   return false;
 }

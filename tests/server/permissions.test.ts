@@ -13,11 +13,15 @@ const user = (perfil: SessionUser["perfil"], podeVerCusto: boolean): SessionUser
   podeVerCusto,
 });
 
-const ALL: Action[] = ["cost:view", "cost:write", "margin:manage", "quote:override", "user:manage", "settings:manage"];
+const ALL: Action[] = ["cost:view", "cost:write", "margin:manage", "quote:override", "user:manage", "settings:manage", "admin:manage"];
 
 describe("can", () => {
-  it("administrator can do everything", () => {
-    for (const a of ALL) expect(can(user("administrador", false), a)).toBe(true);
+  it("administrator can do everything except managing administrators", () => {
+    for (const a of ALL.filter((x) => x !== "admin:manage")) expect(can(user("administrador", false), a)).toBe(true);
+    expect(can(user("administrador", true), "admin:manage")).toBe(false);
+  });
+  it("root can do everything, including managing administrators", () => {
+    for (const a of ALL) expect(can(user("root", false), a)).toBe(true);
   });
   it("seller without cost permission can do nothing privileged", () => {
     for (const a of ALL) expect(can(user("vendedor", false), a)).toBe(false);

@@ -23,9 +23,16 @@ npm run backup -- D:\backups\orc    # outra pasta
 2. Copie o backup escolhido para o caminho do banco, com o nome `orcamentos.db` (apague antes os arquivos `orcamentos.db-wal` e `orcamentos.db-shm`, se existirem).
 3. Inicie o sistema e confira os orçamentos mais recentes.
 
+## Perfis
+
+- **Root** (dono do sistema): tudo o que o administrador faz, mais criar administradores e alterar qualquer conta. **Só o Root altera a conta Root** (senha, 2FA, acesso); ela não pode ser desativada pela aplicação. Só nasce pelo servidor: `npm run create-root` (ou `npm run promote-root -- email` para promover um usuário existente).
+- **Administrador**: configurações, regras, custos, usuários — mas cria apenas vendedores e não mexe na conta Root.
+- **Vendedor**: orçamentos; custo e margem só com a permissão "Mostrar custos".
+
 ## Administração
 
-- Novo administrador: `npm run create-admin` (no primeiro login ele configura o 2FA).
+- Seu primeiro acesso: `npm run create-root` (e-mail e senha digitados no terminal; no primeiro login você configura o Google Authenticator).
+- Novo administrador (pelo servidor): `npm run create-admin` (no primeiro login ele configura o 2FA). Pela tela, só o Root cria administradores.
 - 2FA de alguém travado: `Usuários → Redefinir 2FA` (administrador) ou, pelo servidor, `npm run reset-2fa -- email@empresa.com`.
 - Esqueceu a senha de um usuário: outro administrador usa **Usuários → Redefinir senha**.
 - Se o servidor ficar acessível pela rede interna **sem HTTPS**, defina `INSECURE_COOKIES=1` no `.env` (caso contrário o cookie de sessão `Secure` não é aceito fora de `localhost`). Prefira HTTPS ao expor fora do escritório.
