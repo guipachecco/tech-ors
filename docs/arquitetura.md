@@ -55,7 +55,8 @@ tests/     espelha src/ (domain, infra, modules) + architecture/ (regras de cama
 drizzle/   migrações do banco (geradas e versionadas)
 assets/    logotipo e manual de marca
 public/    arquivos servidos pelo site (logos em /brand)
-docs/      guias (uso, operação, arquitetura) e especificação/plano
+docs/      guias (uso, operação, arquitetura, deploy) e especificação/plano
+Dockerfile, docker-compose.yml, Caddyfile, fly.toml   publicação (veja docs/deploy.md)
 exemplos/  planilhas de exemplo de fornecedores (fora do Git: tem preços comerciais)
 ```
 

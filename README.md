@@ -4,7 +4,7 @@ Sistema local para montar, calcular e exportar orçamentos de equipamentos de TI
 
 - Especificação: `docs/superpowers/specs/2026-10-09-orcamentos-mvp-design.md`
 - Plano: `docs/superpowers/plans/2026-10-09-orcamentos-mvp.md`
-- Uso diário: `docs/guia-de-uso.md` · Operação e backup: `docs/operacao.md` · **Arquitetura: `docs/arquitetura.md`**
+- Uso diário: `docs/guia-de-uso.md` · Operação e backup: `docs/operacao.md` · **Arquitetura: `docs/arquitetura.md`** · **Deploy (Docker): `docs/deploy.md`**
 
 ## Primeiro uso
 

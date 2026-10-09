@@ -16,3 +16,6 @@ next-env.d.ts
 exemplos/
 
 *.tsbuildinfo
+
+# configuração de produção (segredos)
+.env.production

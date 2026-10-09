@@ -1,0 +1,31 @@
+# Para uma máquina própria (VPS ou VM gratuita da Oracle): app + HTTPS automático.
+# Uso: veja docs/deploy.md
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env.production        # SESSION_SECRET e TOTP_ENCRYPTION_KEY (veja .env.example)
+    environment:
+      DATABASE_PATH: /data/orcamentos.db
+    volumes:
+      - orcamentos-data:/data        # o banco fica aqui; sobrevive a atualizações
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?defina DOMAIN no arquivo .env ao lado deste, ex.: orcamentos.suaempresa.com.br}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data             # certificados HTTPS
+
+volumes:
+  orcamentos-data:
+  caddy-data:
