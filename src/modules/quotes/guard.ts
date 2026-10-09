@@ -1,6 +1,6 @@
-import { belowMinimum, lineMarginBps, lineNetCents } from "../../domain/pricing";
-import type { Bps, Cents } from "../../domain/money";
-import type { orcamentoItens, orcamentos } from "../../infra/db/schema";
+import { belowMinimum, lineMarginBps, lineNetCents } from "@/domain/pricing";
+import type { Bps, Cents } from "@/domain/money";
+import type { orcamentoItens, orcamentos } from "@/infra/db/schema";
 import type { SendBlockReason } from "./errors";
 
 export type Quote = typeof orcamentos.$inferSelect;

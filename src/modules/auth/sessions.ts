@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt } from "drizzle-orm";
-import type { Db } from "../../infra/db/client";
-import { sessoes, usuarios } from "../../infra/db/schema";
+import type { Db } from "@/infra/db/client";
+import { sessoes, usuarios } from "@/infra/db/schema";
 
 export const SESSION_HOURS = 12;
 

@@ -8,7 +8,7 @@ import { addCostOffer } from "@/modules/catalog/costs/service";
 import { saveSupplier } from "@/modules/catalog/suppliers/service";
 import {
   analyzeImport, applyImport, assertSafeXlsx, createImport, ImportError, MAX_ROWS, readSheet, saveImportMapping,
-} from "@/modules/catalog/import/service";
+} from "@/modules/catalog/import";
 import { auditoria, ofertasCusto, produtos, usuarios } from "@/infra/db/schema";
 import { NotFoundError } from "@/infra/validation";
 import { createTestDb } from "../../helpers/testDb";

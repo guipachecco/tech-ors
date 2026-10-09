@@ -1,4 +1,4 @@
-import { loadConfig } from "../../infra/config";
+import { loadConfig } from "@/infra/config";
 
 /** Chave de criptografia dos segredos 2FA. Falha cedo, com mensagem clara, se não estiver no .env. */
 export function totpKey(): string {

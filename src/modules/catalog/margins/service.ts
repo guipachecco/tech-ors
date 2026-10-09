@@ -1,12 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import type { Bps } from "../../../domain/money";
-import { recordAudit } from "../../../infra/audit";
-import { assertCan } from "../../auth/permissions";
-import type { SessionUser } from "../../auth/sessions";
-import type { Db } from "../../../infra/db/client";
-import { regrasMargem } from "../../../infra/db/schema";
-import { NotFoundError, parseInput, ValidationError } from "../../../infra/validation";
+import type { Bps } from "@/domain/money";
+import { recordAudit } from "@/infra/audit";
+import { assertCan } from "@/modules/auth/permissions";
+import type { SessionUser } from "@/modules/auth/sessions";
+import type { Db } from "@/infra/db/client";
+import { regrasMargem } from "@/infra/db/schema";
+import { NotFoundError, parseInput, ValidationError } from "@/infra/validation";
 import { getSettings } from "../settings/service";
 
 export type MarginRule = typeof regrasMargem.$inferSelect;

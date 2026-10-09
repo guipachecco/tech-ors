@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, type ReactNode } from "react";
-import type { ActionState } from "@/app/_shared/actions";
+import type { ActionState } from "./action-state";
 import { Alert, btnPrimary } from "./primitives";
 
 type Action = (prev: ActionState, formData: FormData) => Promise<ActionState>;

@@ -1,15 +1,15 @@
 import { and, eq, like } from "drizzle-orm";
 import { z } from "zod";
-import { currentCost, type CostOffer } from "../../../domain/costs";
-import type { Bps, Cents } from "../../../domain/money";
-import { salePriceCents } from "../../../domain/pricing";
-import { normalizeSearch, searchTokens } from "../../../domain/search";
-import { recordAudit } from "../../../infra/audit";
-import { can } from "../../auth/permissions";
-import type { SessionUser } from "../../auth/sessions";
-import type { Db } from "../../../infra/db/client";
-import { fornecedores, ofertasCusto, produtos } from "../../../infra/db/schema";
-import { NotFoundError, parseInput, ValidationError } from "../../../infra/validation";
+import { currentCost, type CostOffer } from "@/domain/costs";
+import type { Bps, Cents } from "@/domain/money";
+import { salePriceCents } from "@/domain/pricing";
+import { normalizeSearch, searchTokens } from "@/domain/search";
+import { recordAudit } from "@/infra/audit";
+import { can } from "@/modules/auth/permissions";
+import type { SessionUser } from "@/modules/auth/sessions";
+import type { Db } from "@/infra/db/client";
+import { fornecedores, ofertasCusto, produtos } from "@/infra/db/schema";
+import { NotFoundError, parseInput, ValidationError } from "@/infra/validation";
 import { resolveRule } from "../margins/service";
 import { getSettings } from "../settings/service";
 

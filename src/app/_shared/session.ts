@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getDb } from "../../infra/db/client";
-import { can, type Action } from "../../modules/auth/permissions";
-import { loadConfig } from "../../infra/config";
-import { createSession, validateSession, type SessionUser } from "../../modules/auth/sessions";
+import { getDb } from "@/infra/db/client";
+import { can, type Action } from "@/modules/auth/permissions";
+import { loadConfig } from "@/infra/config";
+import { createSession, validateSession, type SessionUser } from "@/modules/auth/sessions";
 
 export const SESSION_COOKIE = "sid";
 

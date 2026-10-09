@@ -1,9 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, isNull, lt, or } from "drizzle-orm";
-import { recordAudit } from "../../infra/audit";
-import type { Db } from "../../infra/db/client";
-import { codigosRecuperacao, mfaPendentes, sessoes, usuarios } from "../../infra/db/schema";
-import { NotFoundError } from "../../infra/validation";
+import { recordAudit } from "@/infra/audit";
+import type { Db } from "@/infra/db/client";
+import { codigosRecuperacao, mfaPendentes, sessoes, usuarios } from "@/infra/db/schema";
+import { NotFoundError } from "@/infra/validation";
 import { assertCan } from "./permissions";
 import { assertCanManageTarget } from "./protect";
 import type { SessionUser } from "./sessions";

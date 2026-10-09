@@ -1,8 +1,8 @@
 import { saveClientAction } from "@/app/(app)/clientes/actions";
 import { formatCnpj } from "@/domain/cnpj";
 import type { Client } from "@/modules/clients/service";
-import { ActionForm } from "../../../../ui/ActionForm";
-import { Field, TextInput } from "../../../../ui/primitives";
+import { ActionForm } from "@/ui/ActionForm";
+import { Field, TextInput } from "@/ui/primitives";
 
 export function ClientForm({ client }: { client?: Client }) {
   return (

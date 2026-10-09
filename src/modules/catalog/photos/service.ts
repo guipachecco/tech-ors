@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import sharp from "sharp";
-import { recordAudit } from "../../../infra/audit";
-import type { SessionUser } from "../../auth/sessions";
-import type { Db } from "../../../infra/db/client";
-import { produtoFotos, produtos } from "../../../infra/db/schema";
-import { NotFoundError } from "../../../infra/validation";
+import { recordAudit } from "@/infra/audit";
+import type { SessionUser } from "@/modules/auth/sessions";
+import type { Db } from "@/infra/db/client";
+import { produtoFotos, produtos } from "@/infra/db/schema";
+import { NotFoundError } from "@/infra/validation";
 
 export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const MAX_PIXELS = 50_000_000; // protege a memória contra imagens "bomba"

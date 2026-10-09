@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
-import { formatDate } from "../../domain/format";
-import { formatCnpj } from "../../domain/cnpj";
+import { formatDate } from "@/domain/format";
+import { formatCnpj } from "@/domain/cnpj";
 import type { QuoteClientView } from "../quotes/views";
 
 /** Evita que texto digitado seja interpretado como fórmula pelo Excel. */

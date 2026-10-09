@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { recordAudit } from "../../infra/audit";
+import { recordAudit } from "@/infra/audit";
 import { assertCan, can, ForbiddenError } from "../auth/permissions";
 import { assertCanManageTarget } from "../auth/protect";
 import { hashPassword, validatePasswordStrength } from "../auth/password";
 import type { SessionUser } from "../auth/sessions";
-import type { Db } from "../../infra/db/client";
-import { sessoes, usuarios } from "../../infra/db/schema";
-import { NotFoundError, parseInput, ValidationError } from "../../infra/validation";
+import type { Db } from "@/infra/db/client";
+import { sessoes, usuarios } from "@/infra/db/schema";
+import { NotFoundError, parseInput, ValidationError } from "@/infra/validation";
 
 export type UserRow = Omit<typeof usuarios.$inferSelect, "senhaHash" | "totpSegredoCifrado" | "totpUltimoPasso">;
 

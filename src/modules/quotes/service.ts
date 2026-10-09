@@ -1,17 +1,17 @@
 import { and, desc, eq, lte } from "drizzle-orm";
 import { z } from "zod";
-import { currentCost, type CostOffer } from "../../domain/costs";
-import { salePriceCents } from "../../domain/pricing";
-import { canTransition, type QuoteStatus } from "../../domain/quoteStatus";
-import { formatQuoteNumber } from "../../domain/quoteNumber";
-import { recordAudit } from "../../infra/audit";
+import { currentCost, type CostOffer } from "@/domain/costs";
+import { salePriceCents } from "@/domain/pricing";
+import { canTransition, type QuoteStatus } from "@/domain/quoteStatus";
+import { formatQuoteNumber } from "@/domain/quoteNumber";
+import { recordAudit } from "@/infra/audit";
 import { assertCan, can } from "../auth/permissions";
 import type { SessionUser } from "../auth/sessions";
 import { resolveRule } from "../catalog/margins/service";
 import { getSettings } from "../catalog/settings/service";
-import type { Db } from "../../infra/db/client";
-import { clientes, ofertasCusto, orcamentoItens, orcamentos, produtos, sequenciaOrcamento } from "../../infra/db/schema";
-import { NotFoundError, parseInput, ValidationError } from "../../infra/validation";
+import type { Db } from "@/infra/db/client";
+import { clientes, ofertasCusto, orcamentoItens, orcamentos, produtos, sequenciaOrcamento } from "@/infra/db/schema";
+import { NotFoundError, parseInput, ValidationError } from "@/infra/validation";
 import { InvalidTransitionError, NoValidCostError, QuoteLockedError, SendBlockedError } from "./errors";
 import { checkSendable, OVERRIDABLE, type Quote, type QuoteItem } from "./guard";
 

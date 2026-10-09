@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ActionForm } from "@/ui/ActionForm";
 import { Alert, Card, Field, inputCls, PageHeader } from "@/ui/primitives";
 import { requireCan } from "@/app/_shared/session";
-import { MAX_FILE_BYTES, MAX_ROWS } from "@/modules/catalog/import/service";
+import { MAX_FILE_BYTES, MAX_ROWS } from "@/modules/catalog/import";
 import { listSuppliers } from "@/modules/catalog/suppliers/service";
 import { getDb } from "@/infra/db/client";
 import { uploadImportAction } from "./actions";

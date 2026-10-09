@@ -1,11 +1,12 @@
-import { InvalidMoneyError, parseBRL, parsePercentBps } from "../../domain/money";
-import { ForbiddenError } from "../../modules/auth/permissions";
-import { ImportError } from "../../modules/catalog/import/service";
-import { PhotoError } from "../../modules/catalog/photos/service";
-import { InvalidTransitionError, NoValidCostError, QuoteLockedError, SendBlockedError } from "../../modules/quotes/errors";
-import { NotFoundError, ValidationError } from "../../infra/validation";
+import { InvalidMoneyError, parseBRL, parsePercentBps } from "@/domain/money";
+import { ForbiddenError } from "@/modules/auth/permissions";
+import { ImportError } from "@/modules/catalog/import";
+import { PhotoError } from "@/modules/catalog/photos/service";
+import { InvalidTransitionError, NoValidCostError, QuoteLockedError, SendBlockedError } from "@/modules/quotes/errors";
+import { NotFoundError, ValidationError } from "@/infra/validation";
 
-export type ActionState = { error?: string; ok?: string } | null;
+import type { ActionState } from "@/ui/action-state";
+export type { ActionState };
 
 const FIELD_LABELS: Record<string, string> = {
   sku: "SKU", fabricante: "Fabricante", modelo: "Modelo", categoria: "Categoria", razaoSocial: "Razão social",

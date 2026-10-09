@@ -14,3 +14,5 @@ next-env.d.ts
 
 # planilhas de fornecedores (preços comerciais; não vão para o Git)
 planilhas/
+
+*.tsbuildinfo

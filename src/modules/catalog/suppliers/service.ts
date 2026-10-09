@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { recordAudit } from "../../../infra/audit";
-import type { SessionUser } from "../../auth/sessions";
-import type { Db } from "../../../infra/db/client";
-import { fornecedores } from "../../../infra/db/schema";
-import { NotFoundError, parseInput } from "../../../infra/validation";
+import { recordAudit } from "@/infra/audit";
+import type { SessionUser } from "@/modules/auth/sessions";
+import type { Db } from "@/infra/db/client";
+import { fornecedores } from "@/infra/db/schema";
+import { NotFoundError, parseInput } from "@/infra/validation";
 
 export type Supplier = typeof fornecedores.$inferSelect;
 

@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
-import type { Bps, Cents } from "../../domain/money";
+import type { Bps, Cents } from "@/domain/money";
 import { can } from "../auth/permissions";
 import type { SessionUser } from "../auth/sessions";
 import { getSettings } from "../catalog/settings/service";
-import type { Db } from "../../infra/db/client";
+import type { Db } from "@/infra/db/client";
 import { getProductPhoto } from "../catalog/photos/service";
-import { clientes, produtos } from "../../infra/db/schema";
+import { clientes, produtos } from "@/infra/db/schema";
 import { computeItem, isItemBelowMinimum, isItemCostExpired, quoteTotals, type Quote, type QuoteItem } from "./guard";
 import { getItems, getQuote } from "./service";
 

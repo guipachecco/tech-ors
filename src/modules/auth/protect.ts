@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import type { Db } from "../../infra/db/client";
-import { usuarios } from "../../infra/db/schema";
-import { NotFoundError } from "../../infra/validation";
+import type { Db } from "@/infra/db/client";
+import { usuarios } from "@/infra/db/schema";
+import { NotFoundError } from "@/infra/validation";
 import { ForbiddenError } from "./permissions";
 import type { SessionUser } from "./sessions";
 

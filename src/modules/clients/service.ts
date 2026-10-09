@@ -1,12 +1,12 @@
 import { and, eq, like } from "drizzle-orm";
 import { z } from "zod";
-import { isValidCnpj, onlyDigits } from "../../domain/cnpj";
-import { normalizeSearch, searchTokens } from "../../domain/search";
-import { recordAudit } from "../../infra/audit";
+import { isValidCnpj, onlyDigits } from "@/domain/cnpj";
+import { normalizeSearch, searchTokens } from "@/domain/search";
+import { recordAudit } from "@/infra/audit";
 import type { SessionUser } from "../auth/sessions";
-import type { Db } from "../../infra/db/client";
-import { clientes } from "../../infra/db/schema";
-import { NotFoundError, parseInput } from "../../infra/validation";
+import type { Db } from "@/infra/db/client";
+import { clientes } from "@/infra/db/schema";
+import { NotFoundError, parseInput } from "@/infra/validation";
 
 export type Client = typeof clientes.$inferSelect;
 

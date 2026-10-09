@@ -6,7 +6,7 @@ import { requireUser } from "@/app/_shared/session";
 import { getClient } from "@/modules/clients/service";
 import { getDb } from "@/infra/db/client";
 import { NotFoundError } from "@/infra/validation";
-import { createQuoteAction } from "../../orcamentos/actions";
+import { createQuoteAction } from "@/app/(app)/orcamentos/actions";
 
 export default async function ClientePage({ params }: { params: Promise<{ id: string }> }) {
   await requireUser();

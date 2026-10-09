@@ -1,5 +1,5 @@
-import { ActionForm } from "../../../../ui/ActionForm";
-import { Field, inputCls, TextInput } from "../../../../ui/primitives";
+import { ActionForm } from "@/ui/ActionForm";
+import { Field, inputCls, TextInput } from "@/ui/primitives";
 import { saveProductAction } from "@/app/(app)/produtos/actions";
 import type { ProductRow } from "@/modules/catalog/products/service";
 

@@ -5,7 +5,7 @@ import { Alert, Badge, btnPrimary, btnSecondary, Card, EmptyState, Field, inputC
 import { FIELD_LABELS, FIELDS } from "@/domain/import";
 import { formatBRL } from "@/domain/money";
 import { requireCan } from "@/app/_shared/session";
-import { analyzeImport, getImportRecord, importResult, type RowStatus } from "@/modules/catalog/import/service";
+import { analyzeImport, getImportRecord, importResult, type RowStatus } from "@/modules/catalog/import";
 import { getDb } from "@/infra/db/client";
 import { NotFoundError } from "@/infra/validation";
 import { applyImportAction, saveMappingAction } from "../actions";

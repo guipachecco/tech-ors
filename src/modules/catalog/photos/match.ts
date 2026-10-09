@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
-import { normalizeSearch } from "../../../domain/search";
-import { recordAudit } from "../../../infra/audit";
-import type { SessionUser } from "../../auth/sessions";
-import type { Db } from "../../../infra/db/client";
-import { ofertasCusto, produtos } from "../../../infra/db/schema";
+import { normalizeSearch } from "@/domain/search";
+import { recordAudit } from "@/infra/audit";
+import type { SessionUser } from "@/modules/auth/sessions";
+import type { Db } from "@/infra/db/client";
+import { ofertasCusto, produtos } from "@/infra/db/schema";
 import { normalizePhoto, PhotoError, storeProductPhoto } from "./service";
 
 /** Um nome de arquivo que corresponda a mais produtos que isso é "amplo demais" (ex.: "dell.jpg"). */

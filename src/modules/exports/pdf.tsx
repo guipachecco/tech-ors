@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
-import { formatCnpj } from "../../domain/cnpj";
-import { formatDate } from "../../domain/format";
-import { formatBRL, formatBps } from "../../domain/money";
+import { formatCnpj } from "@/domain/cnpj";
+import { formatDate } from "@/domain/format";
+import { formatBRL, formatBps } from "@/domain/money";
 import type { QuoteClientView } from "../quotes/views";
 
 const BRAND = "#6d609e"; // Pantone 265 C (manual de marca TechMaster)
