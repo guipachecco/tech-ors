@@ -20,21 +20,17 @@ export class PhotoError extends Error {
 }
 
 /**
- * Recebe a foto enviada, confere o tipo REAL da imagem (pelo conteúdo, não pelo nome),
- * e grava uma versão nova: JPEG de até 1000 px, fundo branco, sem metadados (EXIF/GPS).
- * Regravar também descarta qualquer conteúdo escondido no arquivo original.
+ * Confere o tipo REAL da imagem (pelo conteúdo, não pelo nome) e devolve uma versão nova:
+ * JPEG de até 1000 px, fundo branco, sem metadados (EXIF/GPS). Regravar também descarta
+ * qualquer conteúdo escondido no arquivo original.
  */
-export async function saveProductPhoto(db: Db, user: SessionUser, productId: number, input: Buffer, now = new Date()): Promise<{ version: number; bytes: number }> {
+export async function normalizePhoto(input: Buffer): Promise<Buffer> {
   if (input.length === 0) throw new PhotoError("O arquivo está vazio.");
   if (input.length > MAX_PHOTO_BYTES) throw new PhotoError(`A foto passa de ${MAX_PHOTO_BYTES / 1024 / 1024} MB.`);
-  const product = db.select({ id: produtos.id }).from(produtos).where(eq(produtos.id, productId)).get();
-  if (!product) throw new NotFoundError("Produto");
-
-  let jpeg: Buffer;
   try {
     const meta = await sharp(input, { limitInputPixels: MAX_PIXELS, failOn: "error" }).metadata();
     if (!meta.format || !ALLOWED.has(meta.format)) throw new PhotoError("Use uma foto JPG, PNG ou WebP.");
-    jpeg = await sharp(input, { limitInputPixels: MAX_PIXELS, failOn: "error" })
+    return await sharp(input, { limitInputPixels: MAX_PIXELS, failOn: "error" })
       .rotate() // aplica a orientação do EXIF e descarta o resto
       .resize({ width: MAX_SIDE, height: MAX_SIDE, fit: "inside", withoutEnlargement: true })
       .flatten({ background: "#ffffff" })
@@ -44,15 +40,24 @@ export async function saveProductPhoto(db: Db, user: SessionUser, productId: num
     if (e instanceof PhotoError) throw e;
     throw new PhotoError("Não consegui ler essa imagem. Envie uma foto JPG, PNG ou WebP (até 8 MB e 50 megapixels).");
   }
+}
 
-  const version = now.getTime();
-  db.transaction((tx) => {
-    tx.insert(produtoFotos).values({ produtoId: productId, dados: jpeg, atualizadoEm: now })
-      .onConflictDoUpdate({ target: produtoFotos.produtoId, set: { dados: jpeg, atualizadoEm: now } }).run();
-    tx.update(produtos).set({ fotoVersao: version }).where(eq(produtos.id, productId)).run();
-  });
+/** Grava (ou troca) a foto já tratada de um produto. */
+export function storeProductPhoto(db: Db, productId: number, jpeg: Buffer, now: Date): void {
+  db.insert(produtoFotos)
+    .values({ produtoId: productId, dados: jpeg, atualizadoEm: now })
+    .onConflictDoUpdate({ target: produtoFotos.produtoId, set: { dados: jpeg, atualizadoEm: now } })
+    .run();
+  db.update(produtos).set({ fotoVersao: now.getTime() }).where(eq(produtos.id, productId)).run();
+}
+
+export async function saveProductPhoto(db: Db, user: SessionUser, productId: number, input: Buffer, now = new Date()): Promise<{ version: number; bytes: number }> {
+  const product = db.select({ id: produtos.id }).from(produtos).where(eq(produtos.id, productId)).get();
+  if (!product) throw new NotFoundError("Produto");
+  const jpeg = await normalizePhoto(input);
+  db.transaction((tx) => storeProductPhoto(tx as unknown as Db, productId, jpeg, now));
   recordAudit(db, { userId: user.id, acao: "produto.foto_enviar", entidade: "produto", entidadeId: productId, depois: { bytes: jpeg.length } });
-  return { version, bytes: jpeg.length };
+  return { version: now.getTime(), bytes: jpeg.length };
 }
 
 export function removeProductPhoto(db: Db, user: SessionUser, productId: number): void {

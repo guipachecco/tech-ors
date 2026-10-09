@@ -29,6 +29,7 @@ O produto é reconhecido pelo **código do fornecedor** (de importações anteri
 ## Foto e descrição do produto
 
 - Na página do produto há o cartão **Foto do produto**: envie um JPG, PNG ou WebP (até 8 MB). O sistema ajusta a imagem (máx. 1000 px, fundo branco, sem dados da câmera) e ela aparece na lista de produtos, na tela do orçamento e no **PDF** do cliente. (A planilha XLSX não leva imagens.)
+- **Muitas fotos de uma vez:** **Produtos → Fotos em lote**. Escolha várias fotos (ou uma pasta inteira); o **nome do arquivo** diz de qual produto é: o SKU ou o código do fornecedor (`pe_r260_18399_bcc_1.jpg` → só esse produto) ou o nome do modelo (`poweredge-t160.jpg` → todas as variações do T160 com a mesma foto). Maiúsculas, acentos e símbolos não importam. O sistema mostra a lista do que corresponde a quê antes de enviar; por padrão não troca fotos que já existem. Nomes amplos demais (mais de 100 produtos, como `dell.jpg`) são recusados.
 - O campo **Descrição** do produto vira as **especificações** do item no orçamento: o título do item é fabricante + modelo, e as especificações aparecem logo abaixo, em texto menor. Quando são longas, ficam recolhidas na tela ("ver tudo") e completas no PDF.
 
 ## Montar um orçamento

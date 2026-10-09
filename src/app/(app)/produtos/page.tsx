@@ -12,7 +12,7 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Pro
   const products = searchProducts(getDb(), user, q, 200);
   return (
     <>
-      <PageHeader title="Produtos" subtitle="Catálogo com custo e validade" actions={<><Link href="/produtos/importar" className={btnSecondary}>Importar planilha</Link><Link href="/produtos/novo" className={btnPrimary}>Novo produto</Link></>} />
+      <PageHeader title="Produtos" subtitle="Catálogo com custo e validade" actions={<><Link href="/produtos/fotos" className={btnSecondary}>Fotos em lote</Link><Link href="/produtos/importar" className={btnSecondary}>Importar planilha</Link><Link href="/produtos/novo" className={btnPrimary}>Novo produto</Link></>} />
       <Card>
         <form className="mb-4 flex gap-2">
           <input name="q" defaultValue={q} placeholder="Buscar por SKU, modelo, fabricante, descrição…" className={inputCls} autoFocus />
