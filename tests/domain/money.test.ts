@@ -26,3 +26,14 @@ describe("format", () => {
     expect(formatBps(2000)).toBe("20,00%");
   });
 });
+
+import { parsePercentBps } from "@/domain/money";
+
+describe("parsePercentBps", () => {
+  it.each([["20", 2000], ["20,5", 2050], ["20.5", 2050], ["20%", 2000], ["0", 0], ["7,25", 725]])("parses %s", (i, e) => {
+    expect(parsePercentBps(i as string)).toBe(e);
+  });
+  it.each(["", "abc", "-1", "1,234", "10,5,5"])("rejects %j", (i) => {
+    expect(() => parsePercentBps(i)).toThrow(InvalidMoneyError);
+  });
+});

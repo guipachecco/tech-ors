@@ -53,3 +53,10 @@ export function formatBRL(c: Cents): string {
 export function formatBps(b: Bps): string {
   return `${(b / 100).toFixed(2).replace(".", ",")}%`;
 }
+
+/** "20", "20,5", "20.5" ou "20%" → pontos-base (2000, 2050, 2050, 2000). */
+export function parsePercentBps(input: string): Bps {
+  const raw = input.replace("%", "").replace(/\s/g, "").replace(",", ".");
+  if (!/^\d+(\.\d{1,2})?$/.test(raw)) throw new InvalidMoneyError(input);
+  return Math.round(Number(raw) * 100);
+}

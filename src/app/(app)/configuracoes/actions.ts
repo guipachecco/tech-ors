@@ -1,0 +1,57 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { guard, intField, optStr, percentField, str, type ActionState } from "@/server/actions";
+import { requireCan } from "@/server/auth/current";
+import { deleteMarginRule, saveMarginRule } from "@/server/catalog/margins";
+import { saveSettings } from "@/server/catalog/settings";
+import { getDb } from "@/server/db/client";
+
+export async function saveSettingsAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireCan("settings:manage");
+  return guard(() => {
+    saveSettings(getDb(), user, {
+      empresaNome: str(fd, "empresaNome"),
+      empresaCnpj: str(fd, "empresaCnpj"),
+      empresaEndereco: str(fd, "empresaEndereco"),
+      empresaTelefone: str(fd, "empresaTelefone"),
+      empresaEmail: str(fd, "empresaEmail"),
+      validadeCustoDiasPadrao: intField(fd, "validadeCustoDiasPadrao"),
+      validadePropostaDias: intField(fd, "validadePropostaDias"),
+      impostosBps: percentField(fd, "impostos"),
+      margemPadraoBps: percentField(fd, "margemPadrao"),
+      margemMinimaPadraoBps: percentField(fd, "margemMinimaPadrao"),
+      condicoesPagamento: str(fd, "condicoesPagamento"),
+      prazoEntrega: str(fd, "prazoEntrega"),
+      garantia: str(fd, "garantia"),
+      observacoesPadrao: str(fd, "observacoesPadrao"),
+    });
+    revalidatePath("/configuracoes");
+    return "Configurações salvas.";
+  });
+}
+
+export async function saveRuleAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireCan("margin:manage");
+  return guard(() => {
+    const dias = optStr(fd, "validadeCustoDias");
+    saveMarginRule(getDb(), user, {
+      escopo: str(fd, "escopo") as "categoria" | "fabricante",
+      chave: str(fd, "chave"),
+      margemBps: percentField(fd, "margem"),
+      margemMinimaBps: percentField(fd, "margemMinima"),
+      validadeCustoDias: dias ? intField(fd, "validadeCustoDias") : null,
+    });
+    revalidatePath("/configuracoes");
+    return "Regra salva.";
+  });
+}
+
+export async function deleteRuleAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireCan("margin:manage");
+  return guard(() => {
+    deleteMarginRule(getDb(), user, intField(fd, "id"));
+    revalidatePath("/configuracoes");
+    return "Regra excluída.";
+  });
+}

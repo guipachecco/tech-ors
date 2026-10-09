@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getDb } from "../db/client";
-import { assertCan, type Action } from "./permissions";
+import { can, type Action } from "./permissions";
 import { validateSession, type SessionUser } from "./sessions";
 
 export const SESSION_COOKIE = "sid";
@@ -20,6 +20,6 @@ export async function requireUser(): Promise<SessionUser> {
 
 export async function requireCan(action: Action): Promise<SessionUser> {
   const user = await requireUser();
-  assertCan(user, action);
+  if (!can(user, action)) redirect("/acesso-negado");
   return user;
 }

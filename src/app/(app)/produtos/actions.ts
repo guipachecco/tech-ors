@@ -1,0 +1,51 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { dateField, guard, intField, moneyField, optStr, str, type ActionState } from "@/server/actions";
+import { requireCan, requireUser } from "@/server/auth/current";
+import { addCostOffer } from "@/server/catalog/offers";
+import { saveProduct } from "@/server/catalog/products";
+import { getDb } from "@/server/db/client";
+
+export async function saveProductAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const idRaw = str(fd, "id");
+  let redirectTo: string | null = null;
+  const result = await guard(() => {
+    const saved = saveProduct(getDb(), user, {
+      id: idRaw ? Number(idRaw) : undefined,
+      sku: str(fd, "sku"),
+      fabricante: str(fd, "fabricante"),
+      modelo: str(fd, "modelo"),
+      categoria: str(fd, "categoria"),
+      descricao: str(fd, "descricao"),
+      especificacoes: optStr(fd, "especificacoes"),
+    });
+    revalidatePath("/produtos");
+    if (!idRaw) redirectTo = `/produtos/${saved.id}`;
+    return "Produto salvo.";
+  });
+  if (redirectTo) redirect(redirectTo);
+  return result;
+}
+
+export async function addOfferAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireCan("cost:write");
+  const productId = intField(fd, "produtoId");
+  const result = await guard(() => {
+    addCostOffer(getDb(), user, {
+      produtoId: productId,
+      fornecedorId: intField(fd, "fornecedorId"),
+      custoCentavos: moneyField(fd, "custo"),
+      skuFornecedor: optStr(fd, "skuFornecedor"),
+      urlProduto: optStr(fd, "urlProduto"),
+      observacao: optStr(fd, "observacao"),
+      validoAte: dateField(fd, "validoAte"),
+    });
+    revalidatePath(`/produtos/${productId}`);
+    revalidatePath("/produtos");
+    return "Custo atualizado.";
+  });
+  return result;
+}
