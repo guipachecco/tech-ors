@@ -16,6 +16,11 @@ export async function runBackup(db: Db, destDir: string, now = new Date(), keepD
   const dest = path.join(destDir, `${PREFIX}${stamp(now)}.db`);
   await (db as unknown as { $client: Database.Database }).$client.backup(dest);
 
+  // A cópia herda o modo WAL; converte para um arquivo único e autocontido (sem -wal/-shm ao lado).
+  const copy = new Database(dest);
+  copy.pragma("journal_mode = DELETE");
+  copy.close();
+
   for (const name of fs.readdirSync(destDir)) {
     const m = /^orcamentos-(\d{4}-\d{2}-\d{2})\.db$/.exec(name);
     if (!m) continue;
