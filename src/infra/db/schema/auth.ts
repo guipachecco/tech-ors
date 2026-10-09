@@ -45,3 +45,11 @@ export const sessoes = sqliteTable("sessoes", {
   expiraEm: integer("expira_em", { mode: "timestamp_ms" }).notNull(),
   criadoEm: createdAt(),
 });
+
+/** Limite de tentativas (login e código 2FA). Fica no banco porque em servidor sem estado não há memória compartilhada. */
+export const limitesTentativa = sqliteTable("limites_tentativa", {
+  chave: text("chave").primaryKey(),
+  janelaInicio: integer("janela_inicio").notNull(),
+  contagem: integer("contagem").notNull().default(0),
+  bloqueadoAte: integer("bloqueado_ate").notNull().default(0),
+});
