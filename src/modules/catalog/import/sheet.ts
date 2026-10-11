@@ -1,5 +1,6 @@
 // Leitura segura de planilhas .xlsx: confere o arquivo antes de abrir e devolve cabeçalho + linhas.
 import ExcelJS from "exceljs";
+import { decodeCsvBytes, parseCsv } from "@/domain/csv";
 import { cellToText, type CellValue } from "@/domain/import";
 
 export const MAX_FILE_BYTES = 4 * 1024 * 1024; // a Vercel recusa requisições acima de ~4,5 MB
@@ -63,7 +64,24 @@ function cellValue(v: unknown): CellValue {
 
 export type Sheet = { headers: string[]; rows: CellValue[][] };
 
+/** Lê .xlsx ou .csv (detectado pelo conteúdo, não pelo nome) e devolve cabeçalho + linhas. */
 export async function readSheet(buffer: Buffer): Promise<Sheet> {
+  if (buffer.length === 0) throw new ImportError("O arquivo está vazio.");
+  if (buffer.length > MAX_FILE_BYTES) throw new ImportError(`O arquivo passa de ${MAX_FILE_BYTES / 1024 / 1024} MB.`);
+  const isZip = buffer.length >= 4 && buffer.readUInt32LE(0) === 0x04034b50;
+  return isZip ? await readXlsx(buffer) : shapeSheet(readCsvGrid(buffer));
+}
+
+function readCsvGrid(buffer: Buffer): CellValue[][] {
+  const head = buffer.subarray(0, 2000);
+  if (head.includes(0)) throw new ImportError("O arquivo não é uma planilha .xlsx nem um CSV de texto.");
+  const grid = parseCsv(decodeCsvBytes(buffer));
+  if (grid.length === 0) throw new ImportError("A planilha está vazia.");
+  if (grid.some((r) => r.length > MAX_COLS)) throw new ImportError(`A planilha tem mais de ${MAX_COLS} colunas.`);
+  return grid;
+}
+
+async function readXlsx(buffer: Buffer): Promise<Sheet> {
   assertSafeXlsx(buffer);
   const wb = new ExcelJS.Workbook();
   try {
@@ -83,7 +101,10 @@ export async function readSheet(buffer: Buffer): Promise<Sheet> {
     for (let c = 1; c <= cols; c++) values.push(cellValue(row.getCell(c).value));
     grid.push(values);
   });
+  return shapeSheet(grid);
+}
 
+function shapeSheet(grid: CellValue[][]): Sheet {
   // Cabeçalho: primeira linha (entre as 20 primeiras) com pelo menos 2 textos; linhas de título ficam de fora.
   const headerIdx = grid.slice(0, 20).findIndex((r) => r.filter((v) => typeof v === "string" && v.trim() !== "").length >= 2);
   if (headerIdx < 0) throw new ImportError("Não encontrei a linha de cabeçalho (nomes das colunas) nas primeiras linhas.");

@@ -12,7 +12,8 @@ const FIELD_LABELS: Record<string, string> = {
   sku: "SKU", fabricante: "Fabricante", modelo: "Modelo", categoria: "Categoria", razaoSocial: "Razão social",
   cnpj: "CNPJ", email: "E-mail", nome: "Nome", custoCentavos: "Custo", validoAte: "Validade", urlProduto: "Link",
   margemBps: "Margem", margemMinimaBps: "Margem mínima", impostosBps: "Impostos", quantidade: "Quantidade",
-  motivo: "Motivo", site: "Site", senha: "Senha",
+  motivo: "Motivo", site: "Site", senha: "Senha", arquivo: "Arquivo", urlArquivo: "Link da planilha",
+  cabecalhoAuth: "Login do link", limiteVariacaoBps: "Limite de variação",
 };
 
 /** Executa uma ação convertendo erros conhecidos em mensagens para a tela. */

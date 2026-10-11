@@ -38,6 +38,17 @@ export async function addCostOffer(db: Db, user: SessionUser, input: OfferInput,
  */
 export async function addCostOffers(db: Db, user: SessionUser, inputs: OfferInput[], now = new Date()): Promise<CostOfferRow[]> {
   assertCan(user, "cost:write");
+  return await insertCostOffers(db, user.id, inputs, now);
+}
+
+/**
+ * Gravação das ofertas sem checagem de permissão: quem chama já autenticou (usuário com cost:write, ou a atualização
+ * automática por chave/agendador, que passa `actorId: null`). `auditEach: false` deixa o registro de auditoria
+ * para quem chama (uma linha-resumo por execução em vez de uma por oferta).
+ */
+export async function insertCostOffers(
+  db: Db, actorId: number | null, inputs: OfferInput[], now = new Date(), opts: { auditEach?: boolean } = {},
+): Promise<CostOfferRow[]> {
   if (inputs.length === 0) return [];
   const parsed = inputs.map((input) => parseInput(offerSchema, input));
 
@@ -68,7 +79,7 @@ export async function addCostOffers(db: Db, user: SessionUser, inputs: OfferInpu
       observacao: data.observacao || null,
       obtidoEm,
       validoAte,
-      criadoPor: user.id,
+      criadoPor: actorId,
     };
   });
 
@@ -76,7 +87,9 @@ export async function addCostOffers(db: Db, user: SessionUser, inputs: OfferInpu
   for (let i = 0; i < values.length; i += INSERT_CHUNK) {
     created.push(...(await db.insert(ofertasCusto).values(values.slice(i, i + INSERT_CHUNK)).returning().all()));
   }
-  await recordAuditMany(db, created.map((o) => ({ userId: user.id, acao: "oferta_custo.criar", entidade: "oferta_custo", entidadeId: o.id, depois: o })));
+  if (opts.auditEach !== false) {
+    await recordAuditMany(db, created.map((o) => ({ userId: actorId, acao: "oferta_custo.criar", entidade: "oferta_custo", entidadeId: o.id, depois: o })));
+  }
   return created;
 }
 

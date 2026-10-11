@@ -24,8 +24,8 @@ export default async function ImportarPage() {
                   {suppliers.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
                 </select>
               </Field>
-              <Field label="Planilha (.xlsx)" name="arquivo" hint={`Até ${MAX_FILE_BYTES / 1024 / 1024} MB e ${MAX_ROWS.toLocaleString("pt-BR")} linhas. Nada é gravado até você confirmar.`}>
-                <input id="arquivo" name="arquivo" type="file" required accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className={`${inputCls} file:mr-3 file:rounded file:border-0 file:bg-[var(--btn)] file:px-3 file:py-1 file:text-sm file:font-medium file:text-[#fff]`} />
+              <Field label="Planilha (.xlsx ou .csv)" name="arquivo" hint={`Até ${MAX_FILE_BYTES / 1024 / 1024} MB e ${MAX_ROWS.toLocaleString("pt-BR")} linhas. Nada é gravado até você confirmar.`}>
+                <input id="arquivo" name="arquivo" type="file" required accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className={`${inputCls} file:mr-3 file:rounded file:border-0 file:bg-[var(--btn)] file:px-3 file:py-1 file:text-sm file:font-medium file:text-[#fff]`} />
               </Field>
             </ActionForm>
           )}

@@ -111,6 +111,8 @@ export type AnalyzedRow = {
   produtoId?: number;
   produtoNome?: string;
   custoAnteriorCentavos?: Cents;
+  /** Última oferta deste fornecedor para o produto (a que uma reconfirmação renova). */
+  ofertaAnteriorId?: number;
   /** Modelo/fabricante/categoria que serão usados se o produto for criado. */
   novoProduto?: { sku: string; fabricante: string; modelo: string; categoria: string; descricao: string };
   problemas: string[];
@@ -140,16 +142,36 @@ export async function analyzeImport(db: Db, user: SessionUser, importId: number)
   const base = { record: rec, fornecedorNome: supplier.nome, headers, mapping, defaults, sample: allRows.slice(0, 3), missingRequired };
   if (missingRequired.length > 0) return { ...base, rows: [], summary };
 
+  const { rows, summary: counts } = await classifyRows(db, rec.fornecedorId, headers, allRows, mapping, defaults);
+  Object.assign(summary, counts);
+  return { ...base, rows, summary };
+}
+
+export type Classified = {
+  rows: AnalyzedRow[];
+  summary: Record<RowStatus, number>;
+  products: Map<number, typeof produtos.$inferSelect>;
+};
+
+/** Compara as linhas da planilha com o catálogo: o que é novo, o que muda de custo, o que só reconfirma, o que tem erro. */
+export async function classifyRows(
+  db: Db, supplierId: number, headers: string[], allRows: CellValue[][], mapping: Mapping, defaults: Defaults,
+): Promise<Classified> {
+  const summary: Record<RowStatus, number> = { novo: 0, atualiza: 0, reconfirma: 0, erro: 0 };
   // Catálogo em memória (centenas de itens): código do fornecedor → produto, SKU → produto, último custo deste fornecedor.
   const products = await db.select().from(produtos).all();
   const bySku = new Map(products.map((p) => [p.sku.toLowerCase(), p]));
   const byId = new Map(products.map((p) => [p.id, p]));
-  const offers = await db.select().from(ofertasCusto).where(eq(ofertasCusto.fornecedorId, rec.fornecedorId)).orderBy(desc(ofertasCusto.obtidoEm), desc(ofertasCusto.id)).all();
+  const offers = await db.select().from(ofertasCusto).where(eq(ofertasCusto.fornecedorId, supplierId)).orderBy(desc(ofertasCusto.obtidoEm), desc(ofertasCusto.id)).all();
   const byCode = new Map<string, number>();
   const lastCost = new Map<number, Cents>();
+  const lastOffer = new Map<number, number>();
   for (const o of offers) {
     if (o.skuFornecedor && !byCode.has(o.skuFornecedor.toLowerCase())) byCode.set(o.skuFornecedor.toLowerCase(), o.produtoId);
-    if (!lastCost.has(o.produtoId)) lastCost.set(o.produtoId, o.custoCentavos);
+    if (!lastCost.has(o.produtoId)) {
+      lastCost.set(o.produtoId, o.custoCentavos);
+      lastOffer.set(o.produtoId, o.id);
+    }
   }
 
   const rows = parseRows(headers, allRows, mapping, defaults).map<AnalyzedRow>((parsed) => {
@@ -163,7 +185,10 @@ export async function analyzeImport(db: Db, user: SessionUser, importId: number)
       row.produtoId = produtoId;
       row.produtoNome = `${p.fabricante} ${p.modelo}`;
       const prev = lastCost.get(produtoId);
-      if (prev !== undefined) row.custoAnteriorCentavos = prev;
+      if (prev !== undefined) {
+        row.custoAnteriorCentavos = prev;
+        row.ofertaAnteriorId = lastOffer.get(produtoId);
+      }
       if (problemas.length === 0) row.status = prev !== undefined && prev === parsed.custoCentavos ? "reconfirma" : "atualiza";
     } else if (problemas.length === 0) {
       const fabricante = parsed.fabricante;
@@ -180,7 +205,7 @@ export async function analyzeImport(db: Db, user: SessionUser, importId: number)
     summary[row.status]++;
     return row;
   });
-  return { ...base, rows, summary };
+  return { rows, summary, products: byId };
 }
 
 // ---------- aplicação ----------

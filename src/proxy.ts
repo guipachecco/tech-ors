@@ -18,7 +18,8 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  const isPublic = pathname === "/login" || pathname.startsWith("/login/");
+  // /api/precos e /api/cron têm autenticação própria (chave do fornecedor / segredo do agendador), sem cookie de sessão.
+  const isPublic = pathname === "/login" || pathname.startsWith("/login/") || pathname.startsWith("/api/precos/") || pathname === "/api/cron/precos";
   const hasSession = request.cookies.has("sid");
   if (!isPublic && !hasSession) {
     return NextResponse.redirect(new URL("/login", request.url));

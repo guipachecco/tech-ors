@@ -9,6 +9,8 @@ export type Config = {
   databaseAuthToken?: string;
   sessionSecret: string;
   totpEncryptionKey?: string;
+  /** Senha do agendador (cron) que atualiza os preços sozinho. Sem ela, a rota agendada fica desligada. */
+  cronSecret?: string;
   isProduction: boolean;
 };
 
@@ -22,6 +24,7 @@ const schema = z.object({
   // forma antiga (caminho de arquivo), ainda aceita
   DATABASE_PATH: z.string().optional(),
   TOTP_ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/, "TOTP_ENCRYPTION_KEY deve ter 64 caracteres hexadecimais").optional(),
+  CRON_SECRET: z.string().min(16, "CRON_SECRET precisa ter pelo menos 16 caracteres").optional().or(z.literal("")),
   LOCALAPPDATA: z.string().optional(),
   NODE_ENV: z.string().optional(),
 });
@@ -40,6 +43,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     databaseAuthToken: blank(e.DATABASE_AUTH_TOKEN) ?? blank(e.TURSO_AUTH_TOKEN),
     sessionSecret: e.SESSION_SECRET,
     totpEncryptionKey: e.TOTP_ENCRYPTION_KEY,
+    cronSecret: blank(e.CRON_SECRET),
     isProduction: e.NODE_ENV === "production",
   };
 }

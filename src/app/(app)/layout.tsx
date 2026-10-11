@@ -4,7 +4,9 @@ import { AppNav } from "@/ui/AppNav";
 import { Logo } from "@/ui/Logo";
 import { ThemeToggle } from "@/ui/ThemeToggle";
 import { requireUser } from "@/app/_shared/session";
+import { getDb } from "@/infra/db/client";
 import { can } from "@/modules/auth/permissions";
+import { countPendingChanges } from "@/modules/catalog/autoprice";
 
 export const dynamic = "force-dynamic";
 // Importações, fotos e PDFs podem demorar mais que o padrão de uma função na Vercel.
@@ -18,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/produtos", label: "Produtos" },
     { href: "/clientes", label: "Clientes" },
     { href: "/fornecedores", label: "Fornecedores" },
+    ...(can(user, "cost:write") ? [{ href: "/precos", label: "Preços automáticos", badge: await countPendingChanges(getDb()) }] : []),
     ...(admin ? [{ href: "/configuracoes", label: "Regras e configurações" }, { href: "/usuarios", label: "Usuários" }] : []),
   ];
   return (

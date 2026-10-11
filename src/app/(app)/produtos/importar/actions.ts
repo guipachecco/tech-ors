@@ -14,9 +14,9 @@ export async function uploadImportAction(_prev: ActionState, fd: FormData): Prom
   let target: string | null = null;
   const result = await guard(async () => {
     const file = fd.get("arquivo");
-    if (!(file instanceof File) || file.size === 0) throw new ImportError("Escolha o arquivo .xlsx do fornecedor.");
+    if (!(file instanceof File) || file.size === 0) throw new ImportError("Escolha o arquivo (.xlsx ou .csv) do fornecedor.");
     if (file.size > MAX_FILE_BYTES) throw new ImportError(`O arquivo passa de ${MAX_FILE_BYTES / 1024 / 1024} MB.`);
-    if (!/\.xlsx$/i.test(file.name)) throw new ImportError("Use um arquivo .xlsx (no Excel: Salvar como → Pasta de Trabalho do Excel).");
+    if (!/\.(xlsx|csv)$/i.test(file.name)) throw new ImportError("Use um arquivo .xlsx ou .csv (no Excel: Salvar como → Pasta de Trabalho do Excel).");
     const rec = await createImport(getDb(), user, {
       fornecedorId: intField(fd, "fornecedorId"),
       fileName: file.name,
