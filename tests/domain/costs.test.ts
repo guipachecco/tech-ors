@@ -5,9 +5,9 @@ import { currentCost, defaultValidUntil, isOfferValid, type CostOffer } from "@/
 
 const now = new Date("2026-10-09T12:00:00Z");
 const day = 86_400_000;
-const offer = (id: number, costCents: number, validDays: number, obtainedDaysAgo = 1): CostOffer => ({
+const offer = (id: number, costCents: number, validDays: number, obtainedDaysAgo = 1, supplierId = 1): CostOffer => ({
   id,
-  supplierId: 1,
+  supplierId,
   costCents,
   obtainedAt: new Date(now.getTime() - obtainedDaysAgo * day),
   validUntil: new Date(now.getTime() + validDays * day),
@@ -17,6 +17,19 @@ describe("currentCost", () => {
   it("picks the cheapest valid offer", () => {
     const r = currentCost([offer(1, 5000, 3), offer(2, 4000, -1), offer(3, 4500, 2)], now);
     expect(r?.id).toBe(3);
+  });
+  it("picks the cheapest valid offer across suppliers", () => {
+    const r = currentCost([offer(1, 5000, 3, 1, 1), offer(2, 4000, 3, 1, 2), offer(3, 3000, -1, 1, 3)], now);
+    expect(r?.id).toBe(2); // o de 3000 venceu
+  });
+  it("a supplier's newer price replaces its older one, even when the older was cheaper and still valid", () => {
+    const r = currentCost([offer(1, 4000, 5, 3), offer(2, 4600, 5, 1)], now); // mesmo fornecedor subiu de 40 para 46
+    expect(r?.costCents).toBe(4600);
+    // com outro fornecedor mais barato que o novo preço, ele passa a valer
+    expect(currentCost([offer(1, 4000, 5, 3), offer(2, 4600, 5, 1), offer(3, 4300, 5, 2, 2)], now)?.id).toBe(3);
+  });
+  it("when a supplier's latest offer expired, that supplier no longer counts", () => {
+    expect(currentCost([offer(1, 4000, 5, 3), offer(2, 4600, -1, 1)], now)).toBeNull();
   });
   it("returns null when nothing is valid", () => {
     expect(currentCost([offer(1, 5000, -1)], now)).toBeNull();
