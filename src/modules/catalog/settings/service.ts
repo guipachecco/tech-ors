@@ -33,6 +33,7 @@ export const settingsSchema = z.object({
   prazoEntrega: text(500),
   garantia: text(500),
   observacoesPadrao: text(2000),
+  exigirAprovacaoInterna: z.boolean().optional(),
 });
 export type SettingsInput = z.input<typeof settingsSchema>;
 

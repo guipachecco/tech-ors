@@ -11,6 +11,8 @@ O acesso tem **duas etapas**: e-mail e senha, depois um código de 6 dígitos do
 
 ## Rotina semanal (preços mudam toda semana)
 
+> **Automático:** configure cada fornecedor em **Preços automáticos** (link diário ou envio por e-mail) e o catálogo se atualiza sozinho. O que você faz no dia a dia é só aprovar as variações grandes que o sistema segura. Passo a passo em `docs/precos-automaticos.md`. O que segue abaixo é o caminho manual.
+
 1. **Produtos → abra o produto → "Atualizar custo".** Informe o fornecedor, o custo (ex.: `1.234,56`), o link da página do produto e a validade.
    - A validade vem pré-preenchida (padrão da configuração, ou da regra da categoria — ex.: 3 dias para SSD e memória). Pode ser alterada.
    - Cada atualização cria uma nova linha no histórico; nada é sobrescrito.
@@ -18,7 +20,7 @@ O acesso tem **duas etapas**: e-mail e senha, depois um código de 6 dígitos do
 
 ## Importar a planilha do fornecedor
 
-Quando o fornecedor manda os preços em .xlsx: **Produtos → Importar planilha**.
+Quando o fornecedor manda os preços em .xlsx ou .csv: **Produtos → Importar planilha**.
 
 1. Escolha o **fornecedor** e envie o arquivo (até 4 MB e 2.000 linhas). Nada é gravado ainda.
 2. Confira as **colunas**: o sistema sugere (código, descrição, marca, preço, link…); ajuste se precisar. Só **código** e **custo** são obrigatórios. Para produtos novos informe a **categoria** e o **fabricante** (coluna ou valor padrão). A escolha fica salva para o fornecedor: na próxima planilha dele já vem pronta.
@@ -41,6 +43,9 @@ O produto é reconhecido pelo **código do fornecedor** (de importações anteri
 5. Em **Condições**, ajuste validade, pagamento, prazo, garantia e observações.
 6. **Baixe o PDF** (para o cliente) e/ou **XLSX** (editável). Eles nunca mostram custo ou margem.
 7. Depois de enviar ao cliente, clique em **Marcar como enviado**. Quando houver resposta: **aprovado** ou **recusado** (com motivo).
+8. **Atualizar todos os preços** (botão nos itens) traz o custo atual do catálogo para o orçamento todo de uma vez.
+9. Se a empresa exige aprovação interna, use **Pedir aprovação** (os preços se atualizam sozinhos) e um administrador aprova com 1 clique.
+10. Depois de enviado, o orçamento tem um **link para o cliente**: ele abre sem login e aprova ou recusa online. Veja `docs/precos-automaticos.md`.
 
 ## Alertas e travas
 

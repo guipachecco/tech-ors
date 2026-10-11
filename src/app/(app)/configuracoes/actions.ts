@@ -25,6 +25,7 @@ export async function saveSettingsAction(_prev: ActionState, fd: FormData): Prom
       prazoEntrega: str(fd, "prazoEntrega"),
       garantia: str(fd, "garantia"),
       observacoesPadrao: str(fd, "observacoesPadrao"),
+      exigirAprovacaoInterna: fd.get("exigirAprovacaoInterna") === "on",
     });
     revalidatePath("/configuracoes");
     return "Configurações salvas.";

@@ -43,6 +43,7 @@ Em **Project → Settings → Environment Variables** (marque *Production* e, se
 | `TURSO_AUTH_TOKEN` | o token |
 | `SESSION_SECRET` | 64 hex gerado acima |
 | `TOTP_ENCRYPTION_KEY` | 64 hex gerado acima (não perca) |
+| `CRON_SECRET` | (opcional) senha do agendador que atualiza os preços todo dia; veja `docs/precos-automaticos.md` |
 
 (Se você conectar o Turso pela aba **Storage/Integrations** da Vercel, as duas primeiras são preenchidas sozinhas.)
 

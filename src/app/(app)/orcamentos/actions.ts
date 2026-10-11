@@ -6,8 +6,8 @@ import { dateField, guard, intField, moneyField, optStr, percentField, str, type
 import { requireUser } from "@/app/_shared/session";
 import { getDb } from "@/infra/db/client";
 import {
-  addProductItem, addServiceItem, createQuote, duplicateQuote, removeItem, repriceItem,
-  sendQuote, setFrete, setOutcome, updateItem, updateQuoteDetails, getQuote,
+  addProductItem, addServiceItem, approveQuote, cancelApproval, createQuote, duplicateQuote, removeItem, repriceItem, repriceQuote,
+  regeneratePublicLink, requestApproval, sendQuote, setFrete, setOutcome, updateItem, updateQuoteDetails, getQuote,
 } from "@/modules/quotes/service";
 import { ValidationError } from "@/infra/validation";
 
@@ -125,6 +125,60 @@ export async function outcomeAction(_prev: ActionState, fd: FormData): Promise<A
     const outcome = str(fd, "resultado") === "aprovado" ? "aprovado" : "recusado";
     await setOutcome(getDb(), user, quoteId, outcome, optStr(fd, "motivo"));
     refresh(quoteId);
+  });
+}
+
+export async function repriceAllAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const quoteId = intField(fd, "orcamentoId");
+  return guard(async () => {
+    const changes = await repriceQuote(getDb(), user, quoteId);
+    refresh(quoteId);
+    const semCusto = changes.filter((c) => c.precoDepoisCentavos === null).length;
+    const alterados = changes.length - semCusto;
+    if (changes.length === 0) return "Os preços já estão atualizados.";
+    return [alterados ? `${alterados} preço(s) atualizado(s).` : "", semCusto ? `${semCusto} item(ns) sem custo válido: atualize o custo no produto.` : ""].filter(Boolean).join(" ");
+  });
+}
+
+export async function requestApprovalAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const quoteId = intField(fd, "orcamentoId");
+  return guard(async () => {
+    await requestApproval(getDb(), user, quoteId);
+    refresh(quoteId);
+    return "Pedido de aprovação enviado.";
+  });
+}
+
+export async function approveAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const quoteId = intField(fd, "orcamentoId");
+  return guard(async () => {
+    const enviar = str(fd, "enviar") === "1";
+    await approveQuote(getDb(), user, quoteId, { enviar, justificativa: optStr(fd, "justificativa") });
+    refresh(quoteId);
+    return enviar ? "Orçamento aprovado e marcado como enviado." : "Orçamento aprovado.";
+  });
+}
+
+export async function cancelApprovalAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const quoteId = intField(fd, "orcamentoId");
+  return guard(async () => {
+    await cancelApproval(getDb(), user, quoteId, optStr(fd, "nota"));
+    refresh(quoteId);
+    return "Orçamento liberado para edição.";
+  });
+}
+
+export async function regenerateLinkAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const quoteId = intField(fd, "orcamentoId");
+  return guard(async () => {
+    await regeneratePublicLink(getDb(), user, quoteId);
+    refresh(quoteId);
+    return "Link novo criado. O anterior deixou de funcionar.";
   });
 }
 

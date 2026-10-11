@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Badge, btnPrimary, Card, EmptyState, PageHeader, tdCls, thCls } from "@/ui/primitives";
+import { Alert, Badge, btnPrimary, Card, EmptyState, PageHeader, tdCls, thCls } from "@/ui/primitives";
 import { formatDate } from "@/domain/format";
 import { formatBRL } from "@/domain/money";
 import { requireUser } from "@/app/_shared/session";
 import { getDb } from "@/infra/db/client";
-import { expireOverdueQuotes, listQuotes } from "@/modules/quotes/service";
+import { can } from "@/modules/auth/permissions";
+import { expireOverdueQuotes, listPendingApprovals, listQuotes } from "@/modules/quotes/service";
 
 const FILTERS = [
   ["", "Todos"], ["em_elaboracao", "Em elaboração"], ["enviado", "Enviados"],
@@ -12,14 +13,25 @@ const FILTERS = [
 ] as const;
 
 export default async function OrcamentosPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  await requireUser();
+  const user = await requireUser();
   const { status = "" } = await searchParams;
   const db = getDb();
   await expireOverdueQuotes(db);
   const rows = (await listQuotes(db)).filter((q) => !status || q.status === status);
+  const pendingApprovals = can(user, "quote:approve") ? await listPendingApprovals(db, user) : [];
   return (
     <>
       <PageHeader title="Orçamentos" actions={<Link href="/orcamentos/novo" className={btnPrimary}>Novo orçamento</Link>} />
+      {pendingApprovals.length > 0 && (
+        <div className="mb-4">
+          <Alert kind="warn">
+            <strong>{pendingApprovals.length} orçamento(s) aguardando a sua aprovação:</strong>{" "}
+            {pendingApprovals.map((p, i) => (
+              <span key={p.id}>{i > 0 && ", "}<Link href={`/orcamentos/${p.id}`} className="font-medium underline">{p.numero}</Link> ({p.clienteNome}, {formatBRL(p.totalCentavos)})</span>
+            ))}
+          </Alert>
+        </div>
+      )}
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map(([value, label]) => (
           <Link key={value} href={value ? `/orcamentos?status=${value}` : "/orcamentos"}
@@ -43,7 +55,11 @@ export default async function OrcamentosPage({ searchParams }: { searchParams: P
                     <tr key={q.id} className="hover:bg-slate-50">
                       <td className={tdCls}><Link href={`/orcamentos/${q.id}`} className="font-medium text-brand-700 hover:underline">{q.numero}</Link></td>
                       <td className={tdCls}>{q.clienteNome}</td>
-                      <td className={tdCls}><Badge kind={q.status} /></td>
+                      <td className={tdCls}>
+                        <Badge kind={q.status} />
+                        {q.status === "em_elaboracao" && q.aprovacaoStatus === "pendente" && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Em aprovação</span>}
+                        {q.status === "em_elaboracao" && q.aprovacaoStatus === "aprovada" && <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Aprovado internamente</span>}
+                      </td>
                       <td className={tdCls}>{formatBRL(total)}</td>
                       <td className={tdCls}>{formatDate(q.criadoEm)}</td>
                       <td className={tdCls}>{formatDate(q.validoAte)}</td>

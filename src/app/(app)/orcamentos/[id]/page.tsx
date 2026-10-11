@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ActionForm, AutoSaveForm, InlineAction } from "@/ui/ActionForm";
 import {
@@ -13,12 +14,13 @@ import { getClient } from "@/modules/clients/service";
 import { getDb } from "@/infra/db/client";
 import type { SendBlockReason } from "@/modules/quotes/errors";
 import { checkSendable, OVERRIDABLE, quoteTotals } from "@/modules/quotes/guard";
-import { getItems, getQuote, quoteDrift } from "@/modules/quotes/service";
+import { approvalChanges, approvalPeople, getItems, getQuote, quoteDrift } from "@/modules/quotes/service";
+import { getSettings } from "@/modules/catalog/settings/service";
 import { photoVersionsFor, toItemViews } from "@/modules/quotes/views";
 import { NotFoundError } from "@/infra/validation";
 import {
-  addItemAction, addServiceAction, duplicateAction, outcomeAction, removeItemAction, repriceItemAction,
-  sendAction, setFreteAction, updateDetailsAction, updateItemAction,
+  addItemAction, addServiceAction, approveAction, cancelApprovalAction, duplicateAction, outcomeAction, removeItemAction, repriceAllAction,
+  regenerateLinkAction, repriceItemAction, requestApprovalAction, sendAction, setFreteAction, updateDetailsAction, updateItemAction,
 } from "../actions";
 
 const REASON_TEXT: Record<SendBlockReason, string> = {
@@ -26,6 +28,7 @@ const REASON_TEXT: Record<SendBlockReason, string> = {
   validade_vencida: "A validade da proposta já passou. Ajuste em “Condições”.",
   custo_vencido: "Há itens com custo vencido. Use “Atualizar preço” na linha do item.",
   margem_abaixo_minimo: "Há itens abaixo da margem mínima (desconto alto demais).",
+  sem_aprovacao: "Este orçamento precisa da aprovação de um administrador antes de ser enviado.",
 };
 
 /** Especificações do item: texto menor; quando longas, ficam recolhidas com "ver tudo". */
@@ -65,14 +68,25 @@ export default async function OrcamentoPage({
   const rawItems = await getItems(db, id);
   const items = toItemViews(rawItems, user, now, await photoVersionsFor(db, rawItems));
   const totals = quoteTotals(quote, rawItems);
-  const editable = quote.status === "em_elaboracao";
+  const inDraft = quote.status === "em_elaboracao";
+  const locked = inDraft && quote.aprovacaoStatus === "pendente"; // em aprovação: ninguém edita
+  const editable = inDraft && !locked;
+  const approver = can(user, "quote:approve");
+  const settings = await getSettings(db);
+  const people = await approvalPeople(db, quote);
+  const mudancas = approvalChanges(quote);
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
+  const publicUrl = quote.tokenPublico ? `${proto}://${host}/p/${quote.tokenPublico}` : null;
+  const canSend = approver || quote.aprovacaoStatus === "aprovada" || !settings.exigirAprovacaoInterna;
   const showCost = can(user, "cost:view");
   const check = checkSendable(quote, rawItems, now);
   const blockers = check.ok ? [] : check.motivos;
   const onlyOverridable = blockers.length > 0 && blockers.every((m) => OVERRIDABLE.includes(m));
   const canOverride = can(user, "quote:override");
   const results = editable && q ? await searchProducts(db, user, q, 20, now) : [];
-  const drift = editable && showCost ? await quoteDrift(db, user, id, now) : [];
+  const drift = inDraft && showCost ? await quoteDrift(db, user, id, now) : [];
 
   return (
     <>
@@ -138,8 +152,15 @@ export default async function OrcamentoPage({
                 <ul className="mt-1 list-disc pl-5">
                   {drift.map((d) => <li key={d.itemId}>{d.descricao}: {formatBRL(d.custoCongeladoCentavos)} → {d.custoAtualCentavos === null ? "sem custo válido" : formatBRL(d.custoAtualCentavos)}</li>)}
                 </ul>
-                Use “Atualizar preço” para usar o custo atual.
+                Use “Atualizar todos os preços” (ou “Atualizar preço” na linha) para usar o custo atual.
               </Alert></div>
+            )}
+            {items.some((i) => i.tipo === "produto") && (editable || (locked && approver)) && (
+              <div className="mb-3 flex justify-end">
+                <InlineAction action={repriceAllAction} label="Atualizar todos os preços" className={drift.length > 0 ? btnPrimary : btnSecondary}>
+                  <input type="hidden" name="orcamentoId" value={id} />
+                </InlineAction>
+              </div>
             )}
             {items.length === 0 ? <EmptyState>Busque um produto acima para começar.</EmptyState> : (
               <div className="overflow-x-auto">
@@ -248,21 +269,82 @@ export default async function OrcamentoPage({
           </Card>
 
           <Card title="Envio e resultado">
-            {editable ? (
+            {inDraft ? (
               <div className="space-y-3">
+                {quote.aprovacaoNota && quote.aprovacaoStatus === "nenhuma" && <Alert kind="warn">Devolvido para ajustes: {quote.aprovacaoNota}</Alert>}
                 {blockers.length > 0 && (
                   <Alert kind="warn"><ul className="list-disc pl-5">{blockers.map((m) => <li key={m}>{REASON_TEXT[m]}</li>)}</ul></Alert>
                 )}
-                {onlyOverridable && !canOverride && <Alert kind="info">Peça a um administrador para liberar o envio.</Alert>}
-                <ActionForm action={sendAction} submitLabel="Marcar como enviado" className="space-y-3">
-                  <input type="hidden" name="orcamentoId" value={id} />
-                  {onlyOverridable && canOverride && (
-                    <Field label="Justificativa para liberar o envio" name="justificativa" hint="Fica registrada na auditoria.">
-                      <TextInput name="justificativa" required />
-                    </Field>
-                  )}
-                </ActionForm>
-                <p className="text-xs text-slate-500">Baixe o PDF/XLSX e envie ao cliente; depois marque como enviado para acompanhar o resultado.</p>
+
+                {locked ? (
+                  <>
+                    <Alert kind="info">
+                      Aguardando aprovação{people.pedidoPor ? ` — pedida por ${people.pedidoPor}` : ""}{quote.aprovacaoPedidaEm ? ` em ${formatDate(quote.aprovacaoPedidaEm)}` : ""}.
+                      {!approver && " A edição está travada até a resposta."}
+                    </Alert>
+                    {mudancas.length > 0 && (
+                      <div className="rounded-md border border-slate-200 p-3 text-sm">
+                        <div className="mb-1 font-medium text-slate-800">Preços que mudaram ao pedir a aprovação</div>
+                        <ul className="list-disc pl-5 text-slate-700">
+                          {mudancas.map((m) => (
+                            <li key={m.itemId}>{m.descricao}: {formatBRL(m.precoAntesCentavos)} → {m.precoDepoisCentavos === null ? <span className="text-red-700">sem custo válido</span> : formatBRL(m.precoDepoisCentavos)}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {approver ? (
+                      <div className="space-y-3">
+                        <ActionForm action={approveAction} submitLabel="Aprovar e marcar como enviado" className="space-y-3">
+                          <input type="hidden" name="orcamentoId" value={id} />
+                          <input type="hidden" name="enviar" value="1" />
+                          {onlyOverridable && (
+                            <Field label="Justificativa para liberar o envio" name="justificativa" hint="Há custo vencido ou margem abaixo do mínimo. Fica registrada na auditoria.">
+                              <TextInput name="justificativa" required />
+                            </Field>
+                          )}
+                        </ActionForm>
+                        <InlineAction action={approveAction} label="Só aprovar (enviar depois)" className={btnSecondary}>
+                          <input type="hidden" name="orcamentoId" value={id} />
+                          <input type="hidden" name="enviar" value="0" />
+                        </InlineAction>
+                        <ActionForm action={cancelApprovalAction} submitLabel="Devolver para ajustes" className="space-y-2 border-t border-slate-200 pt-3">
+                          <input type="hidden" name="orcamentoId" value={id} />
+                          <Field label="O que precisa ser ajustado" name="nota"><TextInput name="nota" required /></Field>
+                        </ActionForm>
+                      </div>
+                    ) : (
+                      <InlineAction action={cancelApprovalAction} label="Retirar pedido e voltar a editar" className={btnSecondary}>
+                        <input type="hidden" name="orcamentoId" value={id} />
+                      </InlineAction>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {quote.aprovacaoStatus === "aprovada" && (
+                      <Alert kind="ok">Aprovado internamente{people.aprovadoPor ? ` por ${people.aprovadoPor}` : ""}{quote.aprovadoEm ? ` em ${formatDate(quote.aprovadoEm)}` : ""}. Qualquer alteração exige nova aprovação.</Alert>
+                    )}
+                    {!approver && quote.aprovacaoStatus === "nenhuma" && (
+                      <InlineAction action={requestApprovalAction} label="Pedir aprovação" className={canSend ? btnSecondary : btnPrimary}>
+                        <input type="hidden" name="orcamentoId" value={id} />
+                      </InlineAction>
+                    )}
+                    {!canSend && <Alert kind="info">Este orçamento precisa da aprovação de um administrador antes de ser enviado. Os preços são atualizados automaticamente ao pedir.</Alert>}
+                    {canSend && (
+                      <>
+                        {onlyOverridable && !canOverride && <Alert kind="info">Peça a um administrador para liberar o envio.</Alert>}
+                        <ActionForm action={sendAction} submitLabel="Marcar como enviado" className="space-y-3">
+                          <input type="hidden" name="orcamentoId" value={id} />
+                          {onlyOverridable && canOverride && (
+                            <Field label="Justificativa para liberar o envio" name="justificativa" hint="Fica registrada na auditoria.">
+                              <TextInput name="justificativa" required />
+                            </Field>
+                          )}
+                        </ActionForm>
+                        <p className="text-xs text-slate-500">Baixe o PDF/XLSX e envie ao cliente; depois marque como enviado para acompanhar o resultado.</p>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             ) : quote.status === "enviado" ? (
               <div className="space-y-3">
@@ -275,9 +357,25 @@ export default async function OrcamentoPage({
                 </ActionForm>
               </div>
             ) : (
-              <p className="text-sm text-slate-600">Status: <Badge kind={quote.status} />{quote.motivoResultado ? ` — ${quote.motivoResultado}` : ""}</p>
+              <p className="text-sm text-slate-600">Status: <Badge kind={quote.status} />{quote.respondidoPorNome ? ` pelo cliente (${quote.respondidoPorNome})` : ""}{quote.motivoResultado ? ` — ${quote.motivoResultado}` : ""}</p>
             )}
           </Card>
+
+          {!inDraft && (
+            <Card title="Link para o cliente">
+              <p className="mb-3 text-sm text-slate-600">
+                O cliente abre este link (sem login), vê a proposta e aprova ou recusa na hora. Os preços são os do envio: valem até {formatDate(quote.validoAte)}.
+              </p>
+              {publicUrl ? (
+                <input readOnly value={publicUrl} aria-label="Link para o cliente" className={`${inputCls} mb-3 font-mono text-xs`} />
+              ) : (
+                <p className="mb-3 text-sm text-slate-500">Ainda não há link para este orçamento.</p>
+              )}
+              <InlineAction action={regenerateLinkAction} label={publicUrl ? "Gerar link novo (o atual deixa de funcionar)" : "Gerar link"} className={btnSecondary}>
+                <input type="hidden" name="orcamentoId" value={id} />
+              </InlineAction>
+            </Card>
+          )}
 
           <Card title="Condições">
             {editable ? (

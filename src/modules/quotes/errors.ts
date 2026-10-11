@@ -6,8 +6,8 @@ export class NoValidCostError extends Error {
 }
 
 export class QuoteLockedError extends Error {
-  constructor() {
-    super("Só é possível alterar orçamentos em elaboração.");
+  constructor(message = "Só é possível alterar orçamentos em elaboração.") {
+    super(message);
     this.name = "QuoteLockedError";
   }
 }
@@ -19,7 +19,7 @@ export class InvalidTransitionError extends Error {
   }
 }
 
-export type SendBlockReason = "sem_itens" | "validade_vencida" | "custo_vencido" | "margem_abaixo_minimo";
+export type SendBlockReason = "sem_itens" | "validade_vencida" | "custo_vencido" | "margem_abaixo_minimo" | "sem_aprovacao";
 
 export class SendBlockedError extends Error {
   readonly motivos: SendBlockReason[];

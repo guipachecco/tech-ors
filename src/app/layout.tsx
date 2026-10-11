@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,7 +12,8 @@ export const viewport: Viewport = { themeColor: "#0e0d1b" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Tema escuro é o padrão; a preferência escolhida fica num cookie simples.
-  const theme = (await cookies()).get("theme")?.value === "light" ? "light" : "dark";
+  const forceLight = (await headers()).get("x-light-theme") === "1";
+  const theme = forceLight || (await cookies()).get("theme")?.value === "light" ? "light" : "dark";
   return (
     <html lang="pt-BR" data-theme={theme} suppressHydrationWarning>
       <body className="min-h-screen antialiased">{children}</body>

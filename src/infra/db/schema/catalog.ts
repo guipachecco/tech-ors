@@ -77,6 +77,8 @@ export const configuracao = sqliteTable("configuracao", {
   prazoEntrega: text("prazo_entrega").notNull().default("A combinar"),
   garantia: text("garantia").notNull().default("Conforme fabricante"),
   observacoesPadrao: text("observacoes_padrao").notNull().default(""),
+  /** Vendedor só envia o orçamento depois que um administrador aprovar. */
+  exigirAprovacaoInterna: integer("exigir_aprovacao_interna", { mode: "boolean" }).notNull().default(false),
 });
 
 /** Mapeamento de colunas salvo por fornecedor: a próxima planilha dele já vem configurada. */

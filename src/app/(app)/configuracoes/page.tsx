@@ -82,6 +82,13 @@ export default async function ConfiguracoesPage() {
               <Field label="Prazo de entrega (padrão)" name="prazoEntrega"><TextInput name="prazoEntrega" defaultValue={s.prazoEntrega} /></Field>
               <Field label="Garantia (padrão)" name="garantia"><TextInput name="garantia" defaultValue={s.garantia} /></Field>
             </div>
+            <label className="flex items-start gap-2 text-sm text-slate-700">
+              <input type="checkbox" name="exigirAprovacaoInterna" defaultChecked={s.exigirAprovacaoInterna} className="mt-0.5" />
+              <span>
+                <strong>Exigir aprovação de um administrador antes de enviar</strong>
+                <span className="block text-xs text-slate-500">Vendedores pedem a aprovação; o administrador revisa os preços e aprova (ou já envia) com 1 clique.</span>
+              </span>
+            </label>
             <Field label="Observações padrão" name="observacoesPadrao">
               <textarea id="observacoesPadrao" name="observacoesPadrao" rows={3} defaultValue={s.observacoesPadrao} className={inputCls} />
             </Field>

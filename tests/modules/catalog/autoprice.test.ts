@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { ForbiddenError } from "@/modules/auth/permissions";
 import type { SessionUser } from "@/modules/auth/sessions";
 import {
   countPendingChanges, createPushToken, listPendingChanges, listRuns, resolvePendingChanges, revokePushToken, saveSource,
-  updateFromFile, verifyPushToken,
+  updateAllSources, updateFromFile, updateFromSource, verifyPushToken,
 } from "@/modules/catalog/autoprice";
 import { addCostOffer, listOffersForProduct } from "@/modules/catalog/costs/service";
-import { createProducts } from "@/modules/catalog/products/service";
+import { createProducts, getProductView } from "@/modules/catalog/products/service";
 import { saveSupplier } from "@/modules/catalog/suppliers/service";
 import type { Db } from "@/infra/db/client";
 import { fontesPreco, modelosImportacao, ofertasCusto, usuarios } from "@/infra/db/schema";
@@ -64,6 +64,14 @@ describe("updateFromFile (automatic update)", () => {
     expect(ramOffers).toHaveLength(1); // preço igual: nenhuma linha nova...
     expect(ramOffers[0].obtidoEm.getTime()).toBe(NOW.getTime()); // ...só a validade foi renovada
     expect(ramOffers[0].validoAte.getTime()).toBeGreaterThan(NOW.getTime());
+  });
+
+  it("a price INCREASE shows up in the catalog right away (the old cheaper offer does not linger)", async () => {
+    const { db, admin, supplier, ssd } = await setup();
+    await updateFromFile(db, supplier.id, { buffer: csv("SSD-1;SSD;120,00"), fileName: "lista.csv", origem: "agendado" }, NOW); // +20%, dentro do limite
+    const view = await getProductView(db, admin, ssd.id, NOW);
+    expect(view.custo?.custoCentavos).toBe(12_000);
+    expect(view.statusCusto).toBe("valido");
   });
 
   it("holds a big price jump for review instead of applying it, and applies it once approved", async () => {
@@ -200,5 +208,49 @@ describe("price source configuration", () => {
 
     await revokePushToken(db, admin, supplier.id);
     expect(await verifyPushToken(db, supplier.id, second)).toBe(false);
+  });
+});
+
+describe("link source (scheduled)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const URL = "https://93.184.216.34/lista.csv";
+
+  it("downloads the supplier's link with the saved login and applies it", async () => {
+    const { db, admin, supplier, ssd } = await setup();
+    await saveSource(db, admin, { fornecedorId: supplier.id, urlArquivo: URL, cabecalhoAuth: "Authorization: Bearer abc", limiteVariacaoBps: 3000, ativo: true });
+    const fetchMock = vi.fn().mockResolvedValue(new Response(csv("SSD-1;SSD;102,00")));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await updateFromSource(db, supplier.id, "manual", NOW);
+    expect(result.status).toBe("ok");
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe("Bearer abc");
+    expect((await listOffersForProduct(db, admin, ssd.id))[0].custoCentavos).toBe(10_200);
+  });
+
+  it("records a failed download as an error run instead of throwing", async () => {
+    const { db, admin, supplier } = await setup();
+    await saveSource(db, admin, { fornecedorId: supplier.id, urlArquivo: URL, limiteVariacaoBps: 3000, ativo: true });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 403 })));
+    const result = await updateFromSource(db, supplier.id, "agendado", NOW);
+    expect(result).toMatchObject({ status: "erro" });
+    expect((await listRuns(db, admin))[0]).toMatchObject({ origem: "agendado", status: "erro" });
+  });
+
+  it("the daily routine runs every active supplier with a link, isolating failures, and skips paused ones", async () => {
+    const { db, admin, supplier } = await setup();
+    const paused = await saveSupplier(db, admin, { nome: "Pausado" });
+    const broken = await saveSupplier(db, admin, { nome: "Quebrado" });
+    await saveSource(db, admin, { fornecedorId: supplier.id, urlArquivo: URL, limiteVariacaoBps: 3000, ativo: true });
+    await saveSource(db, admin, { fornecedorId: paused.id, urlArquivo: URL, limiteVariacaoBps: 3000, ativo: false });
+    await saveSource(db, admin, { fornecedorId: broken.id, urlArquivo: "https://8.8.8.8/x.csv", limiteVariacaoBps: 3000, ativo: true });
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (u: URL) => (u.hostname === "8.8.8.8" ? new Response("", { status: 500 }) : new Response(csv("SSD-1;SSD;100,00")))));
+
+    const out = await updateAllSources(db, NOW);
+    expect(out.map((o) => [o.nome, "resultado" in o && "status" in o.resultado ? o.resultado.status : "?"]).sort()).toEqual([["Ingram", "ok"], ["Quebrado", "erro"]]);
+  });
+
+  it("refuses to run a supplier that has no link", async () => {
+    const { db, supplier } = await setup();
+    await expect(updateFromSource(db, supplier.id, "manual", NOW)).rejects.toThrow(ValidationError);
   });
 });

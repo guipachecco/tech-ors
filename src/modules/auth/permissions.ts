@@ -5,6 +5,8 @@ export type Action =
   | "cost:write"
   | "margin:manage"
   | "quote:override"
+  /** Revisar e aprovar orçamentos antes de irem ao cliente. */
+  | "quote:approve"
   | "user:manage"
   | "settings:manage"
   /** Criar/promover administradores e alterar contas de administrador: só o Root. */

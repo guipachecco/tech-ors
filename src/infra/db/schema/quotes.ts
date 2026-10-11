@@ -26,8 +26,23 @@ export const orcamentos = sqliteTable(
     criadoPor: integer("criado_por").notNull().references(() => usuarios.id),
     criadoEm: createdAt(),
     enviadoEm: integer("enviado_em", { mode: "timestamp_ms" }),
+    /** Aprovação interna antes do envio: nenhuma → pendente (alguém precisa revisar) → aprovada. */
+    aprovacaoStatus: text("aprovacao_status", { enum: ["nenhuma", "pendente", "aprovada"] }).notNull().default("nenhuma"),
+    aprovacaoPedidaPor: integer("aprovacao_pedida_por").references(() => usuarios.id),
+    aprovacaoPedidaEm: integer("aprovacao_pedida_em", { mode: "timestamp_ms" }),
+    aprovadoPor: integer("aprovado_por").references(() => usuarios.id),
+    aprovadoEm: integer("aprovado_em", { mode: "timestamp_ms" }),
+    /** Recado de quem revisou (obrigatório ao devolver). */
+    aprovacaoNota: text("aprovacao_nota"),
+    /** Preços que mudaram na atualização feita ao pedir a aprovação (para o revisor ver o que mudou). */
+    aprovacaoMudancasJson: text("aprovacao_mudancas_json"),
+    /** Código secreto do link que o cliente usa para ver e responder o orçamento. */
+    tokenPublico: text("token_publico"),
+    /** Resposta do cliente pelo link: nome de quem respondeu e quando. */
+    respondidoPorNome: text("respondido_por_nome"),
+    respondidoEm: integer("respondido_em", { mode: "timestamp_ms" }),
   },
-  (t) => [uniqueIndex("orcamentos_numero_idx").on(t.numero)],
+  (t) => [uniqueIndex("orcamentos_numero_idx").on(t.numero), uniqueIndex("orcamentos_token_idx").on(t.tokenPublico)],
 );
 
 export const orcamentoItens = sqliteTable(

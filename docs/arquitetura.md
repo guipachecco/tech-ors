@@ -31,11 +31,11 @@ Dentro de `modules`, também há uma lista do que cada um pode usar (sem ciclos)
 | `auth` | senha, sessão, 2FA, permissões, proteção da conta Root | — |
 | `users` | cadastro e acesso de usuários | `auth` |
 | `clients` | clientes (CNPJ) | `auth` |
-| `catalog` | produtos, fornecedores, custos, margens, configurações, fotos, importação de planilhas | `auth` |
+| `catalog` | produtos, fornecedores, custos, margens, configurações, fotos, importação de planilhas, atualização automática de preços (`autoprice/`) | `auth` |
 | `quotes` | orçamentos: cálculo, congelamento de preço, envio, visão do cliente | `auth`, `catalog` |
 | `exports` | PDF e XLSX do orçamento | `quotes` |
 
-Dentro de `catalog` há uma subpasta por assunto (`products/`, `suppliers/`, `costs/`, `margins/`, `settings/`, `photos/`, `import/`), cada uma com um `service.ts`. `import/` tem um `index.ts` como porta de entrada.
+Dentro de `catalog` há uma subpasta por assunto (`products/`, `suppliers/`, `costs/`, `margins/`, `settings/`, `photos/`, `import/`, `autoprice/`), cada uma com um `service.ts`. `import/` tem um `index.ts` como porta de entrada.
 
 ## Padrões
 
